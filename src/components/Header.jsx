@@ -15,10 +15,10 @@ import DarkModeToggle from "@/components/DarkModeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function Header() {
-  const { token } = useAuth();
+  const { token, signOut } = useAuth();
 
   return (
-    <header className="w-full border-b shadow-sm ">
+    <header className="w-full border-b shadow-sm">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
           <img src={logo} alt="InForm Logo" className="h-12 w-12" />
@@ -55,7 +55,7 @@ export default function Header() {
               </DropdownMenuLabel>
               {token && (
                 <>
-                  <Link>
+                  <Link onClick={signOut}>
                     <DropdownMenuItem>Sign Out</DropdownMenuItem>
                   </Link>
                 </>

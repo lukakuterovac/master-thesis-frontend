@@ -1,37 +1,46 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "../contexts/ThemeContext";
 
 export default function DarkModeToggle() {
-  const [isDark, setIsDark] = useState(() =>
-    typeof window !== "undefined"
-      ? document.documentElement.classList.contains("dark")
-      : false
-  );
+  const { theme, setTheme } = useTheme();
+  const next = theme === "dark" ? "light" : "dark";
 
+  // Local state to trigger animation
+  const [showSun, setShowSun] = useState(theme === "dark");
+
+  // Update local state when theme changes
   useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add("dark");
-      localStorage.theme = "dark";
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.theme = "light";
-    }
-  }, [isDark]);
-
-  const toggleTheme = () => {
-    setIsDark((prev) => !prev);
-  };
+    setShowSun(theme !== "dark");
+  }, [theme]);
 
   return (
     <Button
-      onClick={toggleTheme}
       variant="ghost"
-      size="icon"
-      className="rounded-full"
+      onClick={() => setTheme(next)}
+      className="p-2 relative w-10 h-10 overflow-visible"
+      aria-label="Toggle Dark Mode"
     >
-      {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-      <span className="sr-only">Toggle theme</span>
+      <Sun
+        className={`absolute inset-0 w-5 h-5 mx-auto my-auto transition-all duration-300 ease-in-out origin-center
+          ${
+            showSun
+              ? "opacity-100 scale-100"
+              : "opacity-0 scale-75 pointer-events-none"
+          }
+        `}
+      />
+
+      <Moon
+        className={`absolute inset-0 w-5 h-5 mx-auto my-auto transition-all duration-300 ease-in-out origin-center
+          ${
+            showSun
+              ? "opacity-0 scale-75 pointer-events-none"
+              : "opacity-100 scale-100"
+          }
+        `}
+      />
     </Button>
   );
 }

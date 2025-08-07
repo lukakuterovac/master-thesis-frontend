@@ -5,6 +5,7 @@ import SignIn from "@/pages/SignIn";
 import SignUp from "@/pages/SignUp";
 import Dashboard from "@/pages/Dashboard";
 import PrivateRoute from "@/router/PrivateRoute";
+import CreateForm from "@/pages/CreateForm";
 
 function AppRouter() {
   return (
@@ -25,6 +26,14 @@ function AppRouter() {
             element={
               <PrivateRoute>
                 <Dashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/create"
+            element={
+              <PrivateRoute>
+                <CreateForm />
               </PrivateRoute>
             }
           />

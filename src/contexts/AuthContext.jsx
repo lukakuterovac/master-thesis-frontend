@@ -6,14 +6,17 @@ const AuthContext = createContext(null);
 // Provider component to wrap your app
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Example: check localStorage for token on mount and set user
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      // You could decode token or call backend to validate & fetch user data
-      setToken({ token });
+      setToken(token); // Assuming raw token is enough; otherwise decode or fetch user
+    } else {
+      setToken(null);
     }
+    setLoading(false); // <- Done checking
   }, []);
 
   // Sign in function (just example)
@@ -29,7 +32,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ token: token, signIn, signOut }}>
+    <AuthContext.Provider value={{ token: token, signIn, signOut, loading }}>
       {children}
     </AuthContext.Provider>
   );

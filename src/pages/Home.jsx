@@ -44,7 +44,7 @@ const Home = () => {
               Browse through your existing forms or check out public ones.
             </p>
             <Link to="/dashboard">
-              <Button variant="outline">View Forms</Button>
+              <Button>View Forms</Button>
             </Link>
           </CardContent>
         </Card>
