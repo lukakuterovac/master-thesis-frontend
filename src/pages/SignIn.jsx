@@ -30,7 +30,7 @@ const SignIn = () => {
       console.log("Sign in successful:", data);
 
       // Optionally store token or user in localStorage or context
-      signIn(data.token);
+      signIn(data.user, data.token);
       toast.success("Sign in successful.");
       navigate("/dashboard");
     } catch (error) {
