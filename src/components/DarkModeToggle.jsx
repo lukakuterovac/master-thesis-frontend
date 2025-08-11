@@ -7,10 +7,8 @@ export default function DarkModeToggle() {
   const { theme, setTheme } = useTheme();
   const next = theme === "dark" ? "light" : "dark";
 
-  // Local state to trigger animation
   const [showSun, setShowSun] = useState(theme === "dark");
 
-  // Update local state when theme changes
   useEffect(() => {
     setShowSun(theme !== "dark");
   }, [theme]);

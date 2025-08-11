@@ -25,15 +25,6 @@ export default function Header() {
           <span className="text-xl font-bold text-primary">InForm</span>
         </Link>
 
-        {/* Auth Actions */}
-        <div className="flex items-center gap-3">
-          {/* Replace with auth state later */}
-
-          {/* Avatar (if logged in) */}
-          {/* <Avatar>
-            <AvatarFallback>LK</AvatarFallback>
-          </Avatar> */}
-        </div>
         <div className="flex space-x-2">
           <DarkModeToggle />
           <DropdownMenu>

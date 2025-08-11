@@ -112,7 +112,6 @@ const CreateForm = () => {
   const validateForm = () => {
     const errors = [];
 
-    // Check form-level fields
     if (!form.type) {
       errors.push("Form type is required.");
     }
@@ -127,18 +126,15 @@ const CreateForm = () => {
       errors.push("Form has no questions.");
     }
 
-    // Validate questions
     form.questions.forEach((q, index) => {
       if (!q.questionText || q.questionText.trim() === "") {
         errors.push(`Question ${index + 1} title is required.`);
       }
 
-      // For choice questions, check options length and non-empty
       if (q.type === "single-choice" || q.type === "multiple-choice") {
         if (!Array.isArray(q.options) || q.options.length < 2) {
           errors.push(`Question ${index + 1} must have at least 2 options.`);
         } else {
-          // Check if any option is empty or whitespace
           const emptyOptionIndex = q.options.findIndex(
             (opt) => !opt || opt.trim() === ""
           );
@@ -153,7 +149,6 @@ const CreateForm = () => {
       }
     });
 
-    // Return object with isValid flag and errors array
     return {
       isValid: errors.length === 0,
       errors,
@@ -273,7 +268,6 @@ const CreateForm = () => {
               id="form-id"
               onSubmit={handleSubmit}
               className="space-y-4"
-              // Prevent native form submission since we're handling save manually
               onKeyDown={(e) => {
                 if (e.key === "Enter") e.preventDefault();
               }}

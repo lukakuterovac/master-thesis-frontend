@@ -29,7 +29,6 @@ const SignIn = () => {
       const data = await signInRequest(form);
       console.log("Sign in successful:", data);
 
-      // Optionally store token or user in localStorage or context
       signIn(data.user, data.token);
       toast.success("Sign in successful.");
       navigate("/dashboard");

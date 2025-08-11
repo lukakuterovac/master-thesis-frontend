@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { signUp } from "@/features/auth"; // You need to implement this API function
+import { signUp } from "@/features/auth";
 
 const SignUp = () => {
   const [form, setForm] = useState({
