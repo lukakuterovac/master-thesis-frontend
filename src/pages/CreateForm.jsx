@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { nanoid } from "nanoid";
 import {
   Command,
   CommandGroup,
@@ -14,9 +15,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Check, Settings2, Save, Trash2 } from "lucide-react";
+import { Check, Settings2, Save, Trash2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/Sidebar";
+import { QuestionCard } from "@/components/QuestionCard";
+import { toast } from "sonner";
+import { createForm, updateForm, deleteForm } from "@/features/form";
 
 const formTypes = [
   { value: "form", label: "Form" },
@@ -24,138 +28,300 @@ const formTypes = [
   { value: "survey", label: "Survey" },
 ];
 
+function reorderArray(array, fromIndex, toIndex) {
+  const result = [...array];
+  const [removed] = result.splice(fromIndex, 1);
+  result.splice(toIndex, 0, removed);
+  return result;
+}
+
 const CreateForm = () => {
-  const [formType, setFormType] = useState(null);
-  const [formTitle, setFormTitle] = useState("");
-  const [formDescription, setFormDescription] = useState("");
+  const [form, setForm] = useState({
+    type: null,
+    title: "",
+    description: "",
+    questions: [],
+  });
 
-  const [formTypePopoverOpen, setFormTypePopoverOpen] = useState(false);
   const [settingsSidebarOpen, setSettingsSidebarOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSubmit = (e) => {
+  // Handlers
+  const setFormField = useCallback((field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }, []);
+
+  const addQuestion = useCallback(() => {
+    setForm((prev) => ({
+      ...prev,
+      questions: [
+        ...prev.questions,
+        {
+          tempId: nanoid(),
+          type: null,
+          questionText: "",
+          options: [],
+          logic: [],
+        },
+      ],
+    }));
+  }, []);
+
+  const updateQuestion = useCallback((id, updatedFields) => {
+    setForm((prev) => ({
+      ...prev,
+      questions: prev.questions.map((q) =>
+        q._id === id || q.tempId === id ? { ...q, ...updatedFields } : q
+      ),
+    }));
+  }, []);
+
+  const moveQuestionUp = useCallback((questionId) => {
+    setForm((prev) => {
+      const index = prev.questions.findIndex((q) => q.id === questionId);
+      if (index > 0) {
+        return {
+          ...prev,
+          questions: reorderArray(prev.questions, index, index - 1),
+        };
+      }
+      return prev;
+    });
+  }, []);
+
+  const moveQuestionDown = useCallback((questionId) => {
+    setForm((prev) => {
+      const index = prev.questions.findIndex((q) => q.id === questionId);
+      if (index < prev.questions.length - 1) {
+        return {
+          ...prev,
+          questions: reorderArray(prev.questions, index, index + 1),
+        };
+      }
+      return prev;
+    });
+  }, []);
+
+  const deleteQuestion = useCallback((questionId) => {
+    setForm((prev) => ({
+      ...prev,
+      questions: prev.questions.filter((q) => q.id !== questionId),
+    }));
+  }, []);
+
+  const validateForm = () => {
+    const errors = [];
+
+    // Check form-level fields
+    if (!form.type) {
+      errors.push("Form type is required.");
+    }
+    if (!form.title || form.title.trim() === "") {
+      errors.push("Form title is required.");
+    }
+    if (!form.description || form.description.trim() === "") {
+      errors.push("Form description is required.");
+    }
+
+    if (!form.questions || form.questions.length === 0) {
+      errors.push("Form has no questions.");
+    }
+
+    // Validate questions
+    form.questions.forEach((q, index) => {
+      if (!q.questionText || q.questionText.trim() === "") {
+        errors.push(`Question ${index + 1} title is required.`);
+      }
+
+      // For choice questions, check options length and non-empty
+      if (q.type === "single-choice" || q.type === "multiple-choice") {
+        if (!Array.isArray(q.options) || q.options.length < 2) {
+          errors.push(`Question ${index + 1} must have at least 2 options.`);
+        } else {
+          // Check if any option is empty or whitespace
+          const emptyOptionIndex = q.options.findIndex(
+            (opt) => !opt || opt.trim() === ""
+          );
+          if (emptyOptionIndex !== -1) {
+            errors.push(
+              `Question ${index + 1} has an empty option at position ${
+                emptyOptionIndex + 1
+              }.`
+            );
+          }
+        }
+      }
+    });
+
+    // Return object with isValid flag and errors array
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // toast.success("Form saved (mock)!");
-    // Logic to persist the form goes here
+
+    const validationResult = validateForm(form);
+
+    if (!validationResult.isValid) {
+      toast.error(
+        <div>
+          <div>
+            <strong>Form is invalid:</strong>
+          </div>
+          <ul className="mt-1 list-disc list-inside">
+            {validationResult.errors.map((error, i) => (
+              <li key={i}>{error}</li>
+            ))}
+          </ul>
+        </div>
+      );
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const payload = {
+        ...form,
+        questions: form.questions.map(({ tempId, ...rest }) => rest),
+      };
+      if (form._id) {
+        const data = await updateForm(payload);
+
+        console.log("Successfully updated form:", data);
+        toast.success("Form updated!");
+      } else {
+        const data = await createForm(payload);
+        console.log("Successfully created form:", data);
+        toast.success("Form created!");
+        setForm(data);
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to save form");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const formTypeButton = () => {
-    return (
-      <>
-        <Popover
-          open={formTypePopoverOpen}
-          onOpenChange={setFormTypePopoverOpen}
-        >
-          <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              role="combobox"
-              aria-expanded={open}
-              className="max-w-fit justify-between"
-            >
-              <span
-                className={cn(
-                  formType ? "font-semibold" : "text-muted-foreground italic"
-                )}
-              >
-                {formType ? formType.label : "Select form type"}
-              </span>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="max-w-fit p-0">
-            <Command>
-              <CommandList>
-                <CommandGroup>
-                  {formTypes.map((item) => (
-                    <CommandItem
-                      key={item.value}
-                      onSelect={() => {
-                        setFormType(item);
-                      }}
-                    >
-                      {item.label}
-                      <Check
-                        className={cn(
-                          "ml-auto h-4 w-4",
-                          formType === item ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-      </>
-    );
-  };
+  const onDeleteForm = async () => {
+    const isFormEmpty =
+      form.type === null &&
+      form.title === "" &&
+      form.description === "" &&
+      Array.isArray(form.questions) &&
+      form.questions.length === 0;
 
-  const formSettingsButton = () => {
-    return (
-      <Button variant="ghost" onClick={() => setSettingsSidebarOpen(true)}>
-        <Settings2 />
-      </Button>
-    );
+    if (isFormEmpty) {
+      toast.info("Form is empty.");
+      return;
+    }
+
+    if (!form._id) {
+      setForm({
+        type: null,
+        title: "",
+        description: "",
+        questions: [],
+      });
+      toast.info("Discarded form.");
+    } else {
+      try {
+        setIsSaving(true);
+        await deleteForm(form);
+        toast.success("Form deleted successfully.");
+      } catch (error) {
+        console.error("Failed to delete form:", error);
+        toast.error("Failed to delete form.");
+      } finally {
+        setForm({
+          type: null,
+          title: "",
+          description: "",
+          questions: [],
+        });
+        setIsSaving(false);
+      }
+    }
   };
 
   return (
     <>
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Top Controls */}
-        <Card className="p-2 flex flex-row justify-between">
-          {formTypeButton()}
-          {formSettingsButton()}
+        <Card className="p-2 flex flex-row justify-between gap-2">
+          <FormTypeButton formType={form.type} setFormField={setFormField} />
+          <FormControlButtons
+            form={form}
+            addQuestion={addQuestion}
+            isSaving={isSaving}
+            handleSubmit={handleSubmit}
+            deleteForm={onDeleteForm}
+          />
+          <FormSettingsButton setSettingsSidebarOpen={setSettingsSidebarOpen} />
         </Card>
 
         {/* Form Card */}
-        <div className={cn(formType ? "" : "blur-xs", "transition-all")}>
-          <Card>
-            <CardContent>
-              <form id="form-id" onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-4">
-                  <Label htmlFor="title">Title</Label>
-                  <Input
-                    id="title"
-                    value={formTitle}
-                    onChange={(e) => setFormTitle(e.target.value)}
-                    placeholder="Enter a title for your form"
-                    required
-                  />
-                </div>
+        <div
+          className={cn(form.type ? "" : "blur-xs", "transition-all space-y-4")}
+        >
+          <Card className="p-4">
+            <form
+              id="form-id"
+              onSubmit={handleSubmit}
+              className="space-y-4"
+              // Prevent native form submission since we're handling save manually
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.preventDefault();
+              }}
+            >
+              <div className="space-y-2">
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  value={form.title}
+                  onChange={(e) => setFormField("title", e.target.value)}
+                  placeholder="Enter a title for your form"
+                  required
+                  disabled={isSaving}
+                />
+              </div>
 
-                <div className="space-y-4">
-                  <Label htmlFor="description">Description</Label>
-                  <Input
-                    id="description"
-                    value={formDescription}
-                    onChange={(e) => setFormDescription(e.target.value)}
-                    placeholder="Brief description"
-                  />
-                </div>
-              </form>
-            </CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Input
+                  id="description"
+                  value={form.description}
+                  onChange={(e) => setFormField("description", e.target.value)}
+                  placeholder="Brief description"
+                  disabled={isSaving}
+                />
+              </div>
+            </form>
           </Card>
-        </div>
 
-        {/* Buttons Row - Outside the Card but inside the layout */}
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-          <Button
-            type="submit"
-            variant="default"
-            className="flex-1 flex items-center justify-center gap-2"
-          >
-            <Save className="w-4 h-4" />
-            Save Form
-          </Button>
-
-          <Button
-            type="button"
-            variant="destructive"
-            className="flex-1 flex items-center justify-center gap-2"
-          >
-            <Trash2 className="w-4 h-4" />
-            Discard Form
-          </Button>
+          {/* Questions List */}
+          {form.questions.length !== 0 && (
+            <div className="flex flex-col space-y-4">
+              <div>Questions</div>
+              {form.questions.map((q) => (
+                <QuestionCard
+                  key={q._id || q.tempId}
+                  question={q}
+                  onChange={(updatedFields) =>
+                    updateQuestion(q._id || q.tempId, updatedFields)
+                  }
+                  onMoveUp={() => moveQuestionUp(q.id)}
+                  onMoveDown={() => moveQuestionDown(q.id)}
+                  onDelete={() => deleteQuestion(q.id)}
+                  disabled={isSaving}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -163,11 +329,117 @@ const CreateForm = () => {
         isOpen={settingsSidebarOpen}
         onClose={() => setSettingsSidebarOpen(false)}
         title="Settings"
-      >
-        <div>Settings...</div>
-      </Sidebar>
+      ></Sidebar>
     </>
   );
 };
+
+// Components
+const FormTypeButton = ({ formType, setFormField }) => (
+  <Popover>
+    <PopoverTrigger asChild>
+      <Button
+        variant="ghost"
+        role="combobox"
+        className="max-w-fit justify-evenly"
+      >
+        <span
+          className={cn(
+            formType ? "font-semibold" : "text-muted-foreground italic"
+          )}
+        >
+          {formType
+            ? formTypes.find((ft) => ft.value === formType)?.label ||
+              "Form type"
+            : "Form type"}
+        </span>
+      </Button>
+    </PopoverTrigger>
+    <PopoverContent align="start" className="max-w-fit p-0">
+      <Command>
+        <CommandList>
+          <CommandGroup>
+            {formTypes.map((item) => (
+              <CommandItem
+                key={item.value}
+                onSelect={() => {
+                  setFormField("type", item.value);
+                }}
+              >
+                {item.label}
+                <Check
+                  className={cn(
+                    "ml-auto h-4 w-4",
+                    formType === item.value ? "opacity-100" : "opacity-0"
+                  )}
+                />
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    </PopoverContent>
+  </Popover>
+);
+
+const FormControlButtons = ({
+  form,
+  isSaving,
+  addQuestion,
+  handleSubmit,
+  deleteForm,
+}) => (
+  <div className="flex gap-2">
+    <Button
+      variant="ghost"
+      className="flex items-center justify-center gap-2 hover:text-primary/90"
+      disabled={!form.type || isSaving}
+      onClick={addQuestion}
+      aria-label="Add question"
+    >
+      <Plus className="w-4 h-4" />
+      <span className="hidden sm:inline">Add Question</span>
+    </Button>
+
+    <Button
+      variant="ghost"
+      className="flex items-center justify-center gap-2 hover:text-green-900"
+      disabled={isSaving}
+      onClick={handleSubmit}
+      type="submit"
+      aria-label="Save form"
+    >
+      <Save className="w-4 h-4" />
+      <span className="hidden sm:inline">
+        {isSaving ? "Saving..." : "Save Form"}
+      </span>
+    </Button>
+
+    <Button
+      variant="ghost"
+      className="flex items-center justify-center gap-2 text-red-500 hover:text-red-900"
+      disabled={isSaving}
+      onClick={deleteForm}
+      aria-label={form._id ? "Delete form" : "Discard form"}
+    >
+      <Trash2 className="w-4 h-4" />
+      <span className="hidden sm:inline">
+        {form._id ? "Delete" : "Discard"} form
+      </span>
+    </Button>
+  </div>
+);
+
+const FormSettingsButton = ({ setSettingsSidebarOpen }) => (
+  <Button
+    variant="ghost"
+    className="hover:text-purple-900"
+    onClick={() => setSettingsSidebarOpen(true)}
+    aria-label="Open settings"
+    title="Open settings"
+  >
+    <Settings2 />
+  </Button>
+);
 
 export default CreateForm;

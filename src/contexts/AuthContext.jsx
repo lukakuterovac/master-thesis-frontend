@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { jwtDecode } from "jwt-decode";
 
 // Create the context
 const AuthContext = createContext(null);
@@ -9,25 +10,35 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Example: check localStorage for token on mount and set user
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      setToken(token); // Assuming raw token is enough; otherwise decode or fetch user
-    } else {
-      setToken(null);
+    const storedToken = localStorage.getItem("token");
+
+    if (storedToken) {
+      try {
+        const decoded = jwtDecode(storedToken);
+        if (decoded.exp * 1000 > Date.now()) {
+          setToken(storedToken);
+          console.log("Decoded: ", decoded);
+        } else {
+          localStorage.removeItem("token");
+          setToken(null);
+          setUser(null);
+        }
+      } catch {
+        localStorage.removeItem("token");
+        setToken(null);
+        setUser(null);
+      }
     }
-    setLoading(false); // <- Done checking
+    setLoading(false);
   }, []);
 
-  // Sign in function (just example)
   const signIn = (user, token) => {
     localStorage.setItem("token", token);
     setUser(user);
     setToken(token);
   };
 
-  // Sign out function
   const signOut = () => {
     localStorage.removeItem("token");
     setUser(null);
@@ -35,9 +46,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider
-      value={{ user: user, token: token, signIn, signOut, loading }}
-    >
+    <AuthContext.Provider value={{ user, token, signIn, signOut, loading }}>
       {children}
     </AuthContext.Provider>
   );
