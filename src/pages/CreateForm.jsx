@@ -15,12 +15,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Check, Settings2, Save, Trash2, Plus } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+
+import { Check, Settings2, Save, Trash2, Plus, Share } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/Sidebar";
 import { QuestionCard } from "@/components/QuestionCard";
 import { toast } from "sonner";
 import { createForm, updateForm, deleteForm } from "@/features/form";
+import { Switch } from "@/components/ui/switch";
 
 const formTypes = [
   { value: "form", label: "Form" },
@@ -41,10 +44,12 @@ const CreateForm = () => {
     title: "",
     description: "",
     questions: [],
+    isPublic: false,
   });
 
   const [settingsSidebarOpen, setSettingsSidebarOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   // Handlers
   const setFormField = useCallback((field, value) => {
@@ -243,20 +248,80 @@ const CreateForm = () => {
     }
   };
 
+  const publishForm = async () => {
+    const validationResult = validateForm();
+    if (!validationResult.isValid) {
+      toast.error(
+        <div>
+          <div>
+            <strong>Form is invalid:</strong>
+          </div>
+          <ul className="mt-1 list-disc list-inside">
+            {validationResult.errors.map((error, i) => (
+              <li key={i}>{error}</li>
+            ))}
+          </ul>
+        </div>
+      );
+      return;
+    }
+
+    setIsPublishing(true);
+
+    try {
+      const payload = {
+        ...form,
+        isPublished: true,
+        questions: form.questions.map(({ tempId, ...rest }) => rest),
+      };
+
+      if (form._id) {
+        await updateForm(payload);
+      } else {
+        await createForm(payload);
+      }
+      toast.success("Form published successfully!");
+    } catch (error) {
+      console.error("Failed to publish form:", error);
+      toast.error("Failed to publish form.");
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const toggleIsPublic = () => {
+    setFormField("isPublic", !form.isPublic);
+  };
+
   return (
     <>
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Top Controls */}
-        <Card className="p-2 flex flex-row justify-between gap-2">
-          <FormTypeButton formType={form.type} setFormField={setFormField} />
-          <FormControlButtons
-            form={form}
-            addQuestion={addQuestion}
-            isSaving={isSaving}
-            handleSubmit={handleSubmit}
-            deleteForm={onDeleteForm}
+        <Card className="p-2 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+          <div className="flex items-center justify-between md:justify-start gap-2">
+            <FormTypeButton formType={form.type} setFormField={setFormField} />
+            <FormSettingsButton
+              setSettingsSidebarOpen={setSettingsSidebarOpen}
+              className="md:hidden"
+            />
+          </div>
+
+          <div className="mt-2 md:mt-0 flex justify-center">
+            <FormControlButtons
+              form={form}
+              isSaving={isSaving}
+              isPublishing={isPublishing}
+              addQuestion={addQuestion}
+              saveForm={handleSubmit}
+              publishForm={publishForm}
+              deleteForm={onDeleteForm}
+            />
+          </div>
+
+          <FormSettingsButton
+            setSettingsSidebarOpen={setSettingsSidebarOpen}
+            className={"hidden md:inline"}
           />
-          <FormSettingsButton setSettingsSidebarOpen={setSettingsSidebarOpen} />
         </Card>
 
         {/* Form Card */}
@@ -323,7 +388,76 @@ const CreateForm = () => {
         isOpen={settingsSidebarOpen}
         onClose={() => setSettingsSidebarOpen(false)}
         title="Settings"
-      ></Sidebar>
+      >
+        <div className="flex flex-col space-y-6 px-4">
+          {/* General Section */}
+          <div>
+            <div className="mb-2 text-sm font-medium">Form visibility</div>
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="is-public"
+                className={cn(
+                  form.isPublic ? "text-primary/50" : "",
+                  "text-sm"
+                )}
+              >
+                Private
+              </Label>
+              <Switch
+                id="is-public"
+                checked={form.isPublic}
+                onCheckedChange={toggleIsPublic}
+              />
+              <Label
+                htmlFor="is-public"
+                className={cn(
+                  form.isPublic ? "" : "text-primary/50",
+                  "text-sm"
+                )}
+              >
+                Public
+              </Label>
+            </div>
+          </div>
+          {/* Expiration Date Section */}
+          <div>
+            <div className="mb-2 text-sm font-medium">Form Expiration</div>
+            <Input
+              type="date"
+              id="expires-at"
+              value={form.expiresAt ? form.expiresAt.split("T")[0] : ""}
+              onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
+              className="max-w-[200px]"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Leave empty for no expiration.
+            </p>
+          </div>
+
+          {/* Response Limit Section */}
+          <div>
+            <div className="mb-2 text-sm font-medium">Response Limit</div>
+            <Input
+              type="number"
+              id="response-limit"
+              min="1"
+              value={form.responseLimit || ""}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  responseLimit: e.target.value
+                    ? parseInt(e.target.value, 10)
+                    : "",
+                })
+              }
+              className="max-w-[120px]"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Leave empty for unlimited responses.
+            </p>
+          </div>
+        </div>
+      </Sidebar>
     </>
   );
 };
@@ -379,55 +513,76 @@ const FormTypeButton = ({ formType, setFormField }) => (
 const FormControlButtons = ({
   form,
   isSaving,
+  isPublishing,
   addQuestion,
-  handleSubmit,
+  saveForm,
+  publishForm,
   deleteForm,
-}) => (
-  <div className="flex gap-2">
-    <Button
-      variant="ghost"
-      className="flex items-center justify-center gap-2 hover:text-primary/90"
-      disabled={!form.type || isSaving}
-      onClick={addQuestion}
-      aria-label="Add question"
-    >
-      <Plus className="w-4 h-4" />
-      <span className="hidden sm:inline">Add Question</span>
-    </Button>
+}) => {
+  // Buttons for md+
+  const buttons = (
+    <>
+      <Button
+        variant="ghost"
+        className="flex items-center justify-center gap-2 hover:text-primary/90"
+        disabled={!form.type || isSaving || isPublishing}
+        onClick={addQuestion}
+        aria-label="Add question"
+      >
+        <Plus className="w-4 h-4" />
 
-    <Button
-      variant="ghost"
-      className="flex items-center justify-center gap-2 hover:text-green-900"
-      disabled={isSaving}
-      onClick={handleSubmit}
-      type="submit"
-      aria-label="Save form"
-    >
-      <Save className="w-4 h-4" />
-      <span className="hidden sm:inline">
-        {isSaving ? "Saving..." : "Save Form"}
-      </span>
-    </Button>
+        <span className="hidden sm:inline">Add Question</span>
+      </Button>
 
-    <Button
-      variant="ghost"
-      className="flex items-center justify-center gap-2 text-red-500 hover:text-red-900"
-      disabled={isSaving}
-      onClick={deleteForm}
-      aria-label={form._id ? "Delete form" : "Discard form"}
-    >
-      <Trash2 className="w-4 h-4" />
-      <span className="hidden sm:inline">
-        {form._id ? "Delete" : "Discard"} form
-      </span>
-    </Button>
-  </div>
-);
+      <Button
+        variant="ghost"
+        className="flex items-center justify-center gap-2 hover:text-blue-500"
+        disabled={isSaving || isPublishing}
+        onClick={saveForm}
+        type="submit"
+        aria-label="Save form"
+      >
+        <Save className="w-4 h-4" />
+        <span className="hidden sm:inline">
+          {isSaving ? "Saving..." : "Save Form"}
+        </span>
+      </Button>
 
-const FormSettingsButton = ({ setSettingsSidebarOpen }) => (
+      <Button
+        variant="ghost"
+        className="flex items-center justify-center gap-2 hover:text-green-500"
+        disabled={isSaving || isPublishing}
+        onClick={publishForm}
+        aria-label="Publish form"
+      >
+        <Share className="w-4 h-4" />
+        <span className="hidden sm:inline">
+          {isPublishing ? "Publishing..." : "Publish Form"}
+        </span>
+      </Button>
+
+      <Button
+        variant="ghost"
+        className="flex items-center justify-center gap-2 text-red-500 hover:text-red-900"
+        disabled={isSaving || isPublishing}
+        onClick={deleteForm}
+        aria-label={form._id ? "Delete form" : "Discard form"}
+      >
+        <Trash2 className="w-4 h-4" />
+        <span className="hidden sm:inline">
+          {form._id ? "Delete" : "Discard"} form
+        </span>
+      </Button>
+    </>
+  );
+
+  return <div className={`flex items-center gap-2`}>{buttons}</div>;
+};
+
+const FormSettingsButton = ({ setSettingsSidebarOpen, className }) => (
   <Button
     variant="ghost"
-    className="hover:text-purple-900"
+    className={cn("hover:text-purple-900", className)}
     onClick={() => setSettingsSidebarOpen(true)}
     aria-label="Open settings"
     title="Open settings"

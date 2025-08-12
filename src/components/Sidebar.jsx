@@ -30,7 +30,7 @@ export default function Sidebar({ isOpen, onClose, title, children }) {
           isOpen ? "translate-x-0" : "translate-x-full"
         )}
       >
-        <div className="flex justify-between items-center mb-4 p-4">
+        <div className="flex justify-between items-center mb-2 p-4">
           <h2 className="text-lg font-semibold">{title}</h2>
           <Button variant="ghost" onClick={onClose}>
             <X className="w-5 h-5" />

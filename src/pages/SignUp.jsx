@@ -6,9 +6,11 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { signUp } from "@/features/auth";
+import { Loader2 } from "lucide-react";
 
 const SignUp = () => {
   const [form, setForm] = useState({
+    username: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -24,20 +26,28 @@ const SignUp = () => {
     e.preventDefault();
     setLoading(true);
 
+    if (!form.username.trim()) {
+      setLoading(false);
+      toast.error("Username is required.");
+      return;
+    }
+
     if (form.password !== form.confirmPassword) {
       setLoading(false);
+      toast.error("Passwords do not match.");
       return;
     }
 
     try {
       const data = await signUp({
+        username: form.username.trim(),
         email: form.email,
         password: form.password,
       });
 
       console.log("Signup successful:", data);
       toast.success("Account created successfully.");
-      navigate("/signin");
+      navigate("/sign-in");
     } catch (err) {
       if (err.response && err.response.data?.message) {
         toast.error(err.response.data.message);
@@ -59,6 +69,19 @@ const SignUp = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                name="username"
+                type="text"
+                required
+                placeholder="Your username"
+                value={form.username}
+                onChange={handleChange}
+              />
+            </div>
+
             <div>
               <Label htmlFor="email">Email</Label>
               <Input
@@ -98,7 +121,13 @@ const SignUp = () => {
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button
+              type="submit"
+              className="w-full flex items-center justify-center gap-2"
+              disabled={loading}
+              color="purple"
+            >
+              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
               {loading ? "Creating Account..." : "Sign Up"}
             </Button>
           </form>

@@ -34,7 +34,7 @@ const SignIn = () => {
       navigate("/dashboard");
     } catch (error) {
       if (error.response && error.response.status === 401) {
-        toast.error("Invalid email or password.");
+        toast.error("Invalid email/username or password.");
       } else {
         toast.error("Something went wrong. Please try again.");
       }
@@ -72,13 +72,13 @@ const SignIn = () => {
             )}
 
             <div className="space-y-3">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email or Username</Label>
               <Input
                 id="email"
                 name="email"
-                type="email"
+                type="text"
                 required
-                placeholder="you@example.com"
+                placeholder="you@example.com or username"
                 value={form.email}
                 onChange={handleChange}
               />

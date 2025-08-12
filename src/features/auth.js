@@ -2,7 +2,6 @@ import axios from "@/lib/axios";
 
 export const signIn = async (data) => {
   const res = await axios.post("/auth/sign-in", data);
-  console.log(res);
   return res.data;
 };
 
