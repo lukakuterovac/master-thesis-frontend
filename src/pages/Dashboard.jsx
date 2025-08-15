@@ -19,6 +19,7 @@ import {
   Lock,
   Filter,
   EyeIcon,
+  TextSearch,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -277,22 +278,20 @@ const Dashboard = () => {
             onClick={() => onViewResponses(form)}
             title="View responses"
           >
-            <Eye className="w-4 h-4" />
+            <TextSearch className="w-4 h-4" />
             <span className="font-light hidden md:inline">Responses</span>
           </Button>
         )}
 
-        {!form.isPublished && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => onEdit(form)}
-            title="Edit form"
-          >
-            <Edit className="w-4 h-4" />
-            <span className="font-light hidden md:inline">Edit</span>
-          </Button>
-        )}
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => onEdit(form)}
+          title="Edit form"
+        >
+          <Edit className="w-4 h-4" />
+          <span className="font-light hidden md:inline">Edit</span>
+        </Button>
 
         <Button
           size="sm"
@@ -311,24 +310,6 @@ const Dashboard = () => {
           </span>
         </Button>
 
-        {form.isPublished && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => onToggleHide(form)}
-            title={form.isPublic ? "Make private" : "Make public"}
-          >
-            {form.isPublic ? (
-              <EyeOff className="w-4 h-4" />
-            ) : (
-              <EyeIcon className="w-4 h-4" />
-            )}
-            <span className="font-light hidden md:inline">
-              {form.isPublic ? "Make private" : "Make public"}
-            </span>
-          </Button>
-        )}
-
         <Button
           size="sm"
           variant="ghost"
@@ -345,7 +326,7 @@ const Dashboard = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-4">
-      <div className="text-2xl">Dashboard</div>
+      <div className="text-3xl font-bold mb-3">Dashboard</div>
 
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-lg">Your forms</h1>

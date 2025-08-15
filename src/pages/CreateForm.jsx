@@ -24,6 +24,7 @@ import { QuestionCard } from "@/components/QuestionCard";
 import { toast } from "sonner";
 import { createForm, updateForm, deleteForm } from "@/features/form";
 import { Switch } from "@/components/ui/switch";
+import { capitalize } from "@/lib/helpers";
 
 const formTypes = [
   { value: "form", label: "Form" },
@@ -353,7 +354,7 @@ const CreateForm = () => {
                   id="title"
                   value={form.title}
                   onChange={(e) => setFormField("title", e.target.value)}
-                  placeholder="Enter a title for your form"
+                  placeholder={`Enter a title for your ${form.type}`}
                   required
                   disabled={isSaving}
                 />
@@ -375,7 +376,20 @@ const CreateForm = () => {
           {/* Questions List */}
           {form.questions.length !== 0 && (
             <div className="flex flex-col space-y-4">
-              <div>Questions</div>
+              <div className="flex items-center justify-between">
+                <div className="text-lg font-semibold">Questions</div>
+                <Button
+                  variant="ghost"
+                  className="flex items-center justify-center gap-2 hover:text-primary/90"
+                  disabled={!form.type || isSaving || isPublishing}
+                  onClick={addQuestion}
+                  aria-label="Add question"
+                >
+                  <Plus className="w-4 h-4" />
+
+                  <span className="hidden sm:inline">Add question</span>
+                </Button>
+              </div>
               {form.questions.map((q) => (
                 <QuestionCard
                   key={q._id || q.tempId}
@@ -397,12 +411,12 @@ const CreateForm = () => {
       <Sidebar
         isOpen={settingsSidebarOpen}
         onClose={() => setSettingsSidebarOpen(false)}
-        title="Settings"
+        title={form.type ? `${capitalize(form.type)} settings` : "Settings"}
       >
-        <div className="flex flex-col space-y-6 px-4">
+        <div className="flex flex-col space-y-6">
           {/* General Section */}
           <div>
-            <div className="mb-2 text-sm font-medium">Form visibility</div>
+            <div className="mb-2 text-sm font-medium">Visibility</div>
             <div className="flex items-center gap-2">
               <Label
                 htmlFor="is-public"
@@ -431,7 +445,7 @@ const CreateForm = () => {
           </div>
           {/* Expiration Date Section */}
           <div>
-            <div className="mb-2 text-sm font-medium">Form Expiration</div>
+            <div className="mb-2 text-sm font-medium">Expiration</div>
             <Input
               type="date"
               id="expires-at"
@@ -487,9 +501,8 @@ const FormTypeButton = ({ formType, setFormField }) => (
           )}
         >
           {formType
-            ? formTypes.find((ft) => ft.value === formType)?.label ||
-              "Form type"
-            : "Form type"}
+            ? formTypes.find((ft) => ft.value === formType)?.label || "Type"
+            : "Type"}
         </span>
       </Button>
     </PopoverTrigger>
@@ -524,69 +537,70 @@ const FormControlButtons = ({
   form,
   isSaving,
   isPublishing,
-  addQuestion,
   saveForm,
   publishForm,
   deleteForm,
 }) => {
-  // Buttons for md+
+  const buttonsDisabled = !form.type || isSaving || isPublishing;
+
   const buttons = (
     <>
       <Button
         variant="ghost"
-        className="flex items-center justify-center gap-2 hover:text-primary/90"
-        disabled={!form.type || isSaving || isPublishing}
-        onClick={addQuestion}
-        aria-label="Add question"
-      >
-        <Plus className="w-4 h-4" />
-
-        <span className="hidden sm:inline">Add Question</span>
-      </Button>
-
-      <Button
-        variant="ghost"
         className="flex items-center justify-center gap-2 hover:text-blue-500"
-        disabled={isSaving || isPublishing}
+        disabled={buttonsDisabled}
         onClick={saveForm}
         type="submit"
-        aria-label="Save form"
+        aria-label={`Save ${form.type ? form.type : ""}`}
       >
         <Save className="w-4 h-4" />
-        <span className="hidden sm:inline">
-          {isSaving ? "Saving..." : "Save Form"}
+        <span className="hidden xs:inline">
+          {isSaving ? "Saving..." : `Save ${form.type ? form.type : ""}`}
         </span>
+        <span className="inline xs:hidden">{isSaving ? "Saving" : "Save"}</span>
       </Button>
 
       <Button
         variant="ghost"
         className="flex items-center justify-center gap-2 hover:text-green-500"
-        disabled={isSaving || isPublishing}
+        disabled={buttonsDisabled}
         onClick={publishForm}
-        aria-label="Publish form"
+        aria-label={`Publish ${form.type ? form.type : ""}`}
       >
         <Share className="w-4 h-4" />
-        <span className="hidden sm:inline">
-          {isPublishing ? "Publishing..." : "Publish Form"}
+        <span className="hidden xs:inline">
+          {isPublishing
+            ? "Publishing..."
+            : `Publish ${form.type ? form.type : ""}`}
+        </span>
+        <span className="inline xs:hidden">
+          {isPublishing ? "Publishing" : "Publish"}
         </span>
       </Button>
 
       <Button
         variant="ghost"
         className="flex items-center justify-center gap-2 text-red-500 hover:text-red-900"
-        disabled={isSaving || isPublishing}
+        disabled={buttonsDisabled}
         onClick={deleteForm}
-        aria-label={form._id ? "Delete form" : "Discard form"}
+        aria-label={
+          form._id
+            ? `Delete ${form.type ? form.type : ""}`
+            : `Discard ${form.type ? form.type : ""}`
+        }
       >
         <Trash2 className="w-4 h-4" />
-        <span className="hidden sm:inline">
-          {form._id ? "Delete" : "Discard"} form
+        <span className="hidden xs:inline">
+          {form._id ? "Delete" : "Discard"} {form.type ? form.type : ""}
+        </span>
+        <span className="inline xs:hidden">
+          {form._id ? "Delete" : "Discard"}
         </span>
       </Button>
     </>
   );
 
-  return <div className={`flex items-center gap-2`}>{buttons}</div>;
+  return <div className="flex items-center gap-0 sm:gap-2">{buttons}</div>;
 };
 
 const FormSettingsButton = ({ setSettingsSidebarOpen, className }) => (
