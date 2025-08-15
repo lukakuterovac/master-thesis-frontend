@@ -92,7 +92,9 @@ const CreateForm = () => {
 
   const moveQuestionUp = useCallback((questionId) => {
     setForm((prev) => {
-      const index = prev.questions.findIndex((q) => q.id === questionId);
+      const index = prev.questions.findIndex(
+        (q) => q._id === questionId || q.tempId === questionId
+      );
       if (index > 0) {
         return {
           ...prev,
@@ -105,8 +107,10 @@ const CreateForm = () => {
 
   const moveQuestionDown = useCallback((questionId) => {
     setForm((prev) => {
-      const index = prev.questions.findIndex((q) => q.id === questionId);
-      if (index < prev.questions.length - 1) {
+      const index = prev.questions.findIndex(
+        (q) => q._id === questionId || q.tempId === questionId
+      );
+      if (index > -1 && index < prev.questions.length - 1) {
         return {
           ...prev,
           questions: reorderArray(prev.questions, index, index + 1),
@@ -374,37 +378,36 @@ const CreateForm = () => {
           </Card>
 
           {/* Questions List */}
-          {form.questions.length !== 0 && (
-            <div className="flex flex-col space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="text-lg font-semibold">Questions</div>
-                <Button
-                  variant="ghost"
-                  className="flex items-center justify-center gap-2 hover:text-primary/90"
-                  disabled={!form.type || isSaving || isPublishing}
-                  onClick={addQuestion}
-                  aria-label="Add question"
-                >
-                  <Plus className="w-4 h-4" />
+          <div className="flex flex-col space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="text-lg font-semibold">Questions</div>
+              <Button
+                variant="ghost"
+                className="flex items-center justify-center gap-2 hover:text-primary/90"
+                disabled={!form.type || isSaving || isPublishing}
+                onClick={addQuestion}
+                aria-label="Add question"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Add question</span>
+              </Button>
+            </div>
 
-                  <span className="hidden sm:inline">Add question</span>
-                </Button>
-              </div>
-              {form.questions.map((q) => (
+            {form.questions.length > 0 &&
+              form.questions.map((q) => (
                 <QuestionCard
                   key={q._id || q.tempId}
                   question={q}
                   onChange={(updatedFields) =>
                     updateQuestion(q._id || q.tempId, updatedFields)
                   }
-                  onMoveUp={() => moveQuestionUp(q._id)}
-                  onMoveDown={() => moveQuestionDown(q._id)}
+                  onMoveUp={() => moveQuestionUp(q._id || q.tempId)}
+                  onMoveDown={() => moveQuestionDown(q._id || q.tempId)}
                   onDelete={() => deleteQuestion(q._id || q.tempId)}
                   disabled={isSaving}
                 />
               ))}
-            </div>
-          )}
+          </div>
         </div>
       </div>
 
