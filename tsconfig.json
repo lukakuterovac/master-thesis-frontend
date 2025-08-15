@@ -43,6 +43,7 @@
 //   }
 // }
 // tsconfig.json
+
 {
   "compilerOptions": {
     "target": "ESNext",
@@ -50,10 +51,20 @@
     "jsx": "react-jsx",
     "moduleResolution": "Node",
     "strict": false,
+    "strictNullChecks": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "types": []
   },
   "include": ["src"]
 }

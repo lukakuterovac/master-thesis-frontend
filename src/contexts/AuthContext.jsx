@@ -18,6 +18,7 @@ export function AuthProvider({ children }) {
         const decoded = jwtDecode(storedToken);
         if (decoded.exp * 1000 > Date.now()) {
           setToken(storedToken);
+          setUser(decoded.user);
           console.log("Decoded: ", decoded);
         } else {
           localStorage.removeItem("token");
