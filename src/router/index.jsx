@@ -1,12 +1,16 @@
 import { Routes, Route } from "react-router-dom";
 import Layout from "@/components/Layout";
-import Home from "@/pages/Home";
-import SignIn from "@/pages/SignIn";
-import SignUp from "@/pages/SignUp";
-import Dashboard from "@/pages/Dashboard";
 import PrivateRoute from "@/router/PrivateRoute";
-import CreateForm from "@/pages/CreateForm";
-import FillForm from "@/pages/FillForm";
+
+import {
+  Home,
+  SignIn,
+  SignUp,
+  Dashboard,
+  CreateForm,
+  FillForm,
+  Explore,
+} from "@/pages";
 
 function AppRouter() {
   return (
@@ -20,6 +24,7 @@ function AppRouter() {
       <Route element={<Layout />}>
         {/* Public route */}
         <Route path="/" element={<Home />} />
+        <Route path="/explore" element={<Explore />} />
 
         {/* Protected routes */}
         <Route
