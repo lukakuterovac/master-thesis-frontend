@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useLocation } from "react-router-dom";
 
 import { Check, Settings2, Save, Trash2, Plus, Share } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -39,6 +39,8 @@ function reorderArray(array, fromIndex, toIndex) {
 }
 
 const CreateForm = () => {
+  const location = useLocation();
+
   const [form, setForm] = useState({
     type: null,
     title: "",
@@ -46,6 +48,12 @@ const CreateForm = () => {
     questions: [],
     isPublic: false,
   });
+
+  useEffect(() => {
+    if (location.state?.form) {
+      setForm(location.state.form);
+    }
+  }, [location.state]);
 
   const [settingsSidebarOpen, setSettingsSidebarOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -110,7 +118,9 @@ const CreateForm = () => {
   const deleteQuestion = useCallback((questionId) => {
     setForm((prev) => ({
       ...prev,
-      questions: prev.questions.filter((q) => q.id !== questionId),
+      questions: prev.questions.filter(
+        (q) => q.tempId !== questionId && q._id !== questionId
+      ),
     }));
   }, []);
 
@@ -189,7 +199,7 @@ const CreateForm = () => {
         questions: form.questions.map(({ tempId, ...rest }) => rest),
       };
       if (form._id) {
-        const data = await updateForm(payload);
+        const data = await updateForm(form._id, payload);
 
         console.log("Successfully updated form:", data);
         toast.success("Form updated!");
@@ -231,7 +241,7 @@ const CreateForm = () => {
     } else {
       try {
         setIsSaving(true);
-        await deleteForm(form);
+        await deleteForm(form._id);
         toast.success("Form deleted successfully.");
       } catch (error) {
         console.error("Failed to delete form:", error);
@@ -276,7 +286,7 @@ const CreateForm = () => {
       };
 
       if (form._id) {
-        await updateForm(payload);
+        await updateForm(form._id, payload);
       } else {
         await createForm(payload);
       }
@@ -373,9 +383,9 @@ const CreateForm = () => {
                   onChange={(updatedFields) =>
                     updateQuestion(q._id || q.tempId, updatedFields)
                   }
-                  onMoveUp={() => moveQuestionUp(q.id)}
-                  onMoveDown={() => moveQuestionDown(q.id)}
-                  onDelete={() => deleteQuestion(q.id)}
+                  onMoveUp={() => moveQuestionUp(q._id)}
+                  onMoveDown={() => moveQuestionDown(q._id)}
+                  onDelete={() => deleteQuestion(q._id || q.tempId)}
                   disabled={isSaving}
                 />
               ))}
