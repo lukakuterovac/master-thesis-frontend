@@ -26,9 +26,7 @@ export default function FillForm() {
       const data = await getFormByShareId(shareId);
       setForm(data);
     } catch (error) {
-      console.error("Failed to get form", error);
-
-      if (!error.isAuthError) {
+      if (!error.isAuthError && !error.isHandled) {
         toast.error("Failed to get form");
       }
     } finally {
@@ -76,9 +74,7 @@ export default function FillForm() {
       toast.success("Form submitted successfully!");
       setAnswers({});
     } catch (error) {
-      console.error("Failed to submit form", error);
-
-      if (!error.isAuthError) {
+      if (!error.isAuthError && !error.isHandled) {
         toast.error("Failed to submit form.");
       }
     }

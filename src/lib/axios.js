@@ -14,40 +14,31 @@ instance.interceptors.response.use(
     const status = error.response?.status;
     const message = error.response?.data?.message || "Something went wrong";
 
+    console.log("An error has occured: ", error);
+
     // Handle auth errors
     if (status === 401) {
-      error.isAuthError = true; // <-- mark this as an auth error
+      error.isAuthError = true;
 
       if (message === "Token expired") {
-        toast.error("Session expired, please sign in again.");
+        toast.error("Session expired, please sign in again");
       } else {
-        toast.error("Unauthorized. Please sign in.");
+        toast.error(message);
       }
 
-      // Clear local storage/session
       localStorage.removeItem("token");
 
-      // Navigate to sign-in page
       const navigate = getNavigate();
       if (navigate) {
         setTimeout(() => navigate("/sign-in"), 100);
       } else {
-        setTimeout(() => {
-          window.location.href = "/sign-in";
-        }, 100);
+        setTimeout(() => (window.location.href = "/sign-in"), 100);
       }
     }
-    // Handle forbidden
-    else if (status === 403) {
-      toast.error("You don’t have permission to perform this action.");
-    }
-    // Handle server errors
-    else if (status >= 500) {
-      toast.error("Server error. Please try again later.");
-    }
-    // Handle network errors
-    else if (error.code === "ECONNABORTED" || !error.response) {
-      toast.error("Network error. Please check your connection.");
+    // Mark other handled errors
+    else if (status >= 500 || status === 403 || !error.response) {
+      error.isHandled = true;
+      toast.error(message);
     }
 
     return Promise.reject(error);

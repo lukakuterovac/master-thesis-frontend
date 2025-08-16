@@ -33,13 +33,13 @@ const SignIn = () => {
       toast.success("Sign in successful.");
       navigate("/dashboard");
     } catch (error) {
-      if (error.response && error.response.status === 401) {
-        toast.error("Invalid email/username or password.");
-      } else {
-        toast.error("Something went wrong. Please try again.");
+      if (!error.isAuthError && !error.isHandled) {
+        const message = error.response?.data?.message || "Something went wrong";
+        toast.error(message);
       }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

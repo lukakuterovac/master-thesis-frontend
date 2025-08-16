@@ -149,8 +149,7 @@ const Dashboard = () => {
       const data = await getForms();
       setForms(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Failed to load forms", error);
-      if (!error.isAuthError) {
+      if (!error.isAuthError && !error.isHandled) {
         toast.error("Failed to load your forms.");
       }
     } finally {
@@ -171,8 +170,7 @@ const Dashboard = () => {
       const responses = await getFormResponses(form._id || form.id);
       setResponsesPreview({ form, responses });
     } catch (error) {
-      console.error("Failed to load responses", error);
-      if (!error.isAuthError) {
+      if (!error.isAuthError && !error.isHandled) {
         toast.error("Failed to load responses.");
       }
     }
@@ -206,11 +204,10 @@ const Dashboard = () => {
       await deleteFormApi(idToDelete);
       toast.success("Form deleted");
     } catch (error) {
-      console.error("Failed to delete form", error);
       setForms(prevForms);
       setCurrentPage(prevPage);
 
-      if (!error.isAuthError) {
+      if (!error.isAuthError && !error.isHandled) {
         toast.error("Failed to delete form.");
       }
     } finally {
@@ -233,8 +230,7 @@ const Dashboard = () => {
       );
     } catch (error) {
       setForms(prev);
-      console.error("Failed to toggle visibility", error);
-      if (!error.isAuthError) {
+      if (!error.isAuthError && !error.isHandled) {
         toast.error("Failed to toggle visibility.");
       }
     }
@@ -268,8 +264,7 @@ const Dashboard = () => {
       toast.success(publish ? "Form published" : "Form unpublished");
     } catch (error) {
       setForms(prev);
-      console.error("Failed to change publish state", error);
-      if (!error.isAuthError) {
+      if (!error.isAuthError && !error.isHandled) {
         toast.error("Failed to change publish state.");
       }
     } finally {

@@ -214,8 +214,7 @@ const CreateForm = () => {
         setForm(data);
       }
     } catch (error) {
-      console.error("Failed to save form:", error);
-      if (!error.isAuthError) {
+      if (!error.isAuthError && !error.isHandled) {
         toast.error("Failed to save form");
       }
     } finally {
@@ -250,8 +249,7 @@ const CreateForm = () => {
         await deleteForm(form._id);
         toast.success("Form deleted successfully.");
       } catch (error) {
-        console.error("Failed to delete form:", error);
-        if (!error.isAuthError) {
+        if (!error.isAuthError && !error.isHandled) {
           toast.error("Failed to delete form.");
         }
       } finally {
@@ -300,8 +298,7 @@ const CreateForm = () => {
       }
       toast.success("Form published successfully!");
     } catch (error) {
-      console.error("Failed to publish form:", error);
-      if (!error.isAuthError) {
+      if (!error.isAuthError && !error.isHandled) {
         toast.error("Failed to publish form.");
       }
     } finally {

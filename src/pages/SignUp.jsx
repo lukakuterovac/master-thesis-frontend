@@ -48,11 +48,10 @@ const SignUp = () => {
       console.log("Signup successful:", data);
       toast.success("Account created successfully.");
       navigate("/sign-in");
-    } catch (err) {
-      if (err.response && err.response.data?.message) {
-        toast.error(err.response.data.message);
-      } else {
-        toast.error("Failed to create account. Please try again.");
+    } catch (error) {
+      if (!error.isAuthError && !error.isHandled) {
+        const message = error.response?.data?.message || "Something went wrong";
+        toast.error(message);
       }
     } finally {
       setLoading(false);
