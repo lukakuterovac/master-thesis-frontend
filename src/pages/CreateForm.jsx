@@ -74,8 +74,7 @@ const CreateForm = () => {
           tempId: nanoid(),
           type: null,
           questionText: "",
-          options: [],
-          logic: [],
+          choices: [],
         },
       ],
     }));
@@ -152,16 +151,16 @@ const CreateForm = () => {
       }
 
       if (q.type === "single-choice" || q.type === "multiple-choice") {
-        if (!Array.isArray(q.options) || q.options.length < 2) {
-          errors.push(`Question ${index + 1} must have at least 2 options.`);
+        if (!Array.isArray(q.choices) || q.choices.length < 2) {
+          errors.push(`Question ${index + 1} must have at least 2 choices.`);
         } else {
-          const emptyOptionIndex = q.options.findIndex(
-            (opt) => !opt || opt.trim() === ""
+          const emptyChoiceIndex = q.choices.findIndex(
+            (choice) => !choice || choice.trim() === ""
           );
-          if (emptyOptionIndex !== -1) {
+          if (emptyChoiceIndex !== -1) {
             errors.push(
-              `Question ${index + 1} has an empty option at position ${
-                emptyOptionIndex + 1
+              `Question ${index + 1} has an empty choice at position ${
+                emptyChoiceIndex + 1
               }.`
             );
           }
@@ -214,9 +213,11 @@ const CreateForm = () => {
         toast.success("Form created!");
         setForm(data);
       }
-    } catch (e) {
-      console.error(e);
-      toast.error("Failed to save form");
+    } catch (error) {
+      console.error("Failed to save form:", error);
+      if (!error.isAuthError) {
+        toast.error("Failed to save form");
+      }
     } finally {
       setIsSaving(false);
     }
@@ -250,7 +251,9 @@ const CreateForm = () => {
         toast.success("Form deleted successfully.");
       } catch (error) {
         console.error("Failed to delete form:", error);
-        toast.error("Failed to delete form.");
+        if (!error.isAuthError) {
+          toast.error("Failed to delete form.");
+        }
       } finally {
         setForm({
           type: null,
@@ -298,7 +301,9 @@ const CreateForm = () => {
       toast.success("Form published successfully!");
     } catch (error) {
       console.error("Failed to publish form:", error);
-      toast.error("Failed to publish form.");
+      if (!error.isAuthError) {
+        toast.error("Failed to publish form.");
+      }
     } finally {
       setIsPublishing(false);
     }

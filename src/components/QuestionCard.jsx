@@ -42,12 +42,12 @@ export const QuestionCard = ({
   );
 
   const handleTypeChange = (type) => {
-    const typesWithOptions = ["single-choice", "multi-choice"];
+    const typesWithChoices = ["single-choice", "multi-choice"];
     onChange({
       ...question,
       type: type.value,
-      options: typesWithOptions.includes(type.value)
-        ? question.options || []
+      choices: typesWithChoices.includes(type.value)
+        ? question.choices || []
         : null,
     });
   };
@@ -128,31 +128,31 @@ export const QuestionCard = ({
       return (
         <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <Label>Options</Label>
+            <Label>Choices</Label>
             <Button
               variant="ghost"
               size="sm"
               onClick={() =>
                 onChange({
                   ...question,
-                  options: [...(question.options || []), ""],
+                  choices: [...(question.choices || []), ""],
                 })
               }
             >
-              <Plus className="h-4 w-4 mr-1" /> Add Option
+              <Plus className="h-4 w-4 mr-1" /> Add choice
             </Button>
           </div>
 
-          {(question.options || []).map((option, index) => (
+          {(question.choices || []).map((choice, index) => (
             <div key={index} className="flex gap-2 items-center">
               <Input
-                value={option}
+                value={choice}
                 onChange={(e) => {
-                  const updatedOptions = [...(question.options || [])];
-                  updatedOptions[index] = e.target.value;
-                  onChange({ ...question, options: updatedOptions });
+                  const updatedChoices = [...(question.choices || [])];
+                  updatedChoices[index] = e.target.value;
+                  onChange({ ...question, choices: updatedChoices });
                 }}
-                placeholder={`Option ${index + 1}`}
+                placeholder={`Choice ${index + 1}`}
                 className="flex-1"
               />
 
@@ -162,12 +162,12 @@ export const QuestionCard = ({
                 size="icon"
                 onClick={() => {
                   if (index === 0) return;
-                  const updatedOptions = [...(question.options || [])];
-                  [updatedOptions[index - 1], updatedOptions[index]] = [
-                    updatedOptions[index],
-                    updatedOptions[index - 1],
+                  const updatedChoices = [...(question.choices || [])];
+                  [updatedChoices[index - 1], updatedChoices[index]] = [
+                    updatedChoices[index],
+                    updatedChoices[index - 1],
                   ];
-                  onChange({ ...question, options: updatedOptions });
+                  onChange({ ...question, choices: updatedChoices });
                 }}
                 disabled={index === 0}
               >
@@ -179,15 +179,15 @@ export const QuestionCard = ({
                 variant="ghost"
                 size="icon"
                 onClick={() => {
-                  if (index === question.options.length - 1) return;
-                  const updatedOptions = [...(question.options || [])];
-                  [updatedOptions[index + 1], updatedOptions[index]] = [
-                    updatedOptions[index],
-                    updatedOptions[index + 1],
+                  if (index === question.choices.length - 1) return;
+                  const updatedChoices = [...(question.choices || [])];
+                  [updatedChoices[index + 1], updatedChoices[index]] = [
+                    updatedChoices[index],
+                    updatedChoices[index + 1],
                   ];
-                  onChange({ ...question, options: updatedOptions });
+                  onChange({ ...question, choices: updatedChoices });
                 }}
-                disabled={index === question.options.length - 1}
+                disabled={index === question.choices.length - 1}
               >
                 <ArrowDown className="h-4 w-4" />
               </Button>
@@ -197,10 +197,10 @@ export const QuestionCard = ({
                 variant="ghost"
                 size="icon"
                 onClick={() => {
-                  const updatedOptions = (question.options || []).filter(
+                  const updatedChoices = (question.choices || []).filter(
                     (_, i) => i !== index
                   );
-                  onChange({ ...question, options: updatedOptions });
+                  onChange({ ...question, choices: updatedChoices });
                 }}
                 className="text-red-500 hover:text-red-900"
               >

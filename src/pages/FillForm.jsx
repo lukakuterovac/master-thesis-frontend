@@ -25,9 +25,12 @@ export default function FillForm() {
     try {
       const data = await getFormByShareId(shareId);
       setForm(data);
-    } catch (e) {
-      console.error(e);
-      toast.error("Failed to get form");
+    } catch (error) {
+      console.error("Failed to get form", error);
+
+      if (!error.isAuthError) {
+        toast.error("Failed to get form");
+      }
     } finally {
       setLoading(false);
     }
@@ -73,8 +76,11 @@ export default function FillForm() {
       toast.success("Form submitted successfully!");
       setAnswers({});
     } catch (error) {
-      console.error(error);
-      toast.error(error.response?.data?.message || "Error submitting form.");
+      console.error("Failed to submit form", error);
+
+      if (!error.isAuthError) {
+        toast.error("Failed to submit form.");
+      }
     }
   };
 
@@ -142,22 +148,22 @@ const QuestionCard = ({ question, value, onChange }) => {
 
   const renderSingleChoice = () => (
     <div className="space-y-2">
-      {question.options.map((opt) => {
-        const id = `${question._id}-${opt}`;
-        const isSelected = value === opt;
+      {question.choices.map((choice) => {
+        const id = `${question._id}-${choice}`;
+        const isSelected = value === choice;
 
         return (
-          <div key={opt} className="flex items-center space-x-2">
+          <div key={choice} className="flex items-center space-x-2">
             <Checkbox
               id={id}
               checked={isSelected}
               onCheckedChange={() =>
-                onChange(question._id, isSelected ? "" : opt)
+                onChange(question._id, isSelected ? "" : choice)
               }
               className="rounded-md"
             />
             <Label htmlFor={id} className="cursor-pointer">
-              {opt}
+              {choice}
             </Label>
           </div>
         );
@@ -167,24 +173,24 @@ const QuestionCard = ({ question, value, onChange }) => {
 
   const renderMultiChoice = () => (
     <div className="space-y-2">
-      {question.options.map((opt) => {
-        const checked = Array.isArray(value) && value.includes(opt);
+      {question.choices.map((choice) => {
+        const checked = Array.isArray(value) && value.includes(choice);
         return (
-          <div key={opt} className="flex items-center space-x-2">
+          <div key={choice} className="flex items-center space-x-2">
             <Checkbox
-              id={`${question._id}-${opt}`}
+              id={`${question._id}-${choice}`}
               checked={checked}
               onCheckedChange={(isChecked) => {
                 const newValues = Array.isArray(value) ? [...value] : [];
-                if (isChecked) newValues.push(opt);
+                if (isChecked) newValues.push(choice);
                 else {
-                  const idx = newValues.indexOf(opt);
+                  const idx = newValues.indexOf(choice);
                   if (idx > -1) newValues.splice(idx, 1);
                 }
                 onChange(question._id, newValues);
               }}
             />
-            <Label htmlFor={`${question._id}-${opt}`}>{opt}</Label>
+            <Label htmlFor={`${question._id}-${choice}`}>{choice}</Label>
           </div>
         );
       })}

@@ -1,44 +1,34 @@
-import { useState, useEffect } from "react";
-import { Moon, Sun } from "lucide-react";
+import { useState } from "react";
+import { Sun, Moon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useTheme } from "../contexts/ThemeContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function DarkModeToggle() {
   const { theme, setTheme } = useTheme();
   const next = theme === "dark" ? "light" : "dark";
 
-  const [showSun, setShowSun] = useState(theme === "dark");
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    setShowSun(theme !== "dark");
-  }, [theme]);
+  const handleToggle = () => {
+    setLoading(true);
+    setTheme(next);
+    setLoading(false);
+  };
 
   return (
     <Button
       variant="ghost"
-      onClick={() => setTheme(next)}
+      onClick={handleToggle}
       className="p-2 relative w-10 h-10 overflow-visible"
       aria-label="Toggle Dark Mode"
     >
-      <Sun
-        className={`absolute inset-0 w-5 h-5 mx-auto my-auto transition-all duration-300 ease-in-out origin-center
-          ${
-            showSun
-              ? "opacity-100 scale-100"
-              : "opacity-0 scale-75 pointer-events-none"
-          }
-        `}
-      />
-
-      <Moon
-        className={`absolute inset-0 w-5 h-5 mx-auto my-auto transition-all duration-300 ease-in-out origin-center
-          ${
-            showSun
-              ? "opacity-0 scale-75 pointer-events-none"
-              : "opacity-100 scale-100"
-          }
-        `}
-      />
+      {loading ? (
+        <Loader2 className="w-5 h-5 animate-spin" />
+      ) : theme === "dark" ? (
+        <Moon className="w-5 h-5 transition-all duration-300" />
+      ) : (
+        <Sun className="w-5 h-5 transition-all duration-300" />
+      )}
     </Button>
   );
 }

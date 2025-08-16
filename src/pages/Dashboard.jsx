@@ -148,9 +148,11 @@ const Dashboard = () => {
     try {
       const data = await getForms();
       setForms(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Failed to load forms", err);
-      toast.error("Failed to load your forms");
+    } catch (error) {
+      console.error("Failed to load forms", error);
+      if (!error.isAuthError) {
+        toast.error("Failed to load your forms.");
+      }
     } finally {
       setLoading(false);
     }
@@ -168,9 +170,11 @@ const Dashboard = () => {
     try {
       const responses = await getFormResponses(form._id || form.id);
       setResponsesPreview({ form, responses });
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load responses");
+    } catch (error) {
+      console.error("Failed to load responses", error);
+      if (!error.isAuthError) {
+        toast.error("Failed to load responses.");
+      }
     }
   };
 
@@ -201,12 +205,14 @@ const Dashboard = () => {
     try {
       await deleteFormApi(idToDelete);
       toast.success("Form deleted");
-    } catch (err) {
-      console.error(err);
-      // rollback on error
+    } catch (error) {
+      console.error("Failed to delete form", error);
       setForms(prevForms);
       setCurrentPage(prevPage);
-      toast.error("Failed to delete form");
+
+      if (!error.isAuthError) {
+        toast.error("Failed to delete form.");
+      }
     } finally {
       setConfirmDelete(null);
       setDoing(false);
@@ -225,10 +231,12 @@ const Dashboard = () => {
       toast.success(
         form.isPublic ? "Form is now public" : "Form is now private"
       );
-    } catch (err) {
-      console.error(err);
-      setForms(prev); // rollback
-      toast.error("Failed to toggle visibility");
+    } catch (error) {
+      setForms(prev);
+      console.error("Failed to toggle visibility", error);
+      if (!error.isAuthError) {
+        toast.error("Failed to toggle visibility.");
+      }
     }
   };
 
@@ -258,10 +266,12 @@ const Dashboard = () => {
         list.map((f) => ((f._id || f.id) === (res._id || res.id) ? res : f))
       );
       toast.success(publish ? "Form published" : "Form unpublished");
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
       setForms(prev);
-      toast.error("Failed to change publish state");
+      console.error("Failed to change publish state", error);
+      if (!error.isAuthError) {
+        toast.error("Failed to change publish state.");
+      }
     } finally {
       setConfirmPublish(null);
       setDoing(false);
@@ -325,129 +335,134 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4">
-      <div className="text-3xl font-bold mb-3">Dashboard</div>
+    <>
+      <div className="flex justify-center px-4">
+        <div className="w-full max-w-3xl">
+          <div className="text-3xl font-bold mb-3">Dashboard</div>
 
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg">Your forms</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate("/create")}>
-            <Plus />
-            <span className="hidden md:inline">Create form</span>
-          </Button>
-          <Button variant="ghost" onClick={fetchForms}>
-            <RefreshCw />
-            <span className="hidden md:inline">Refresh</span>
-          </Button>
+          <SearchAndFilter
+            onSearch={handleSearch}
+            onFilterChange={handleFilterChange}
+          />
+
+          <div className="flex-col space-y-3 grow-0">
+            {loading ? (
+              <div className="text-muted-foreground text-center">
+                Loading...
+              </div>
+            ) : filteredForms.length === 0 ? (
+              <div className="text-muted-foreground text-center">
+                {searchQuery ||
+                Object.values(filters).some((arr) => arr.length > 0)
+                  ? "No forms found."
+                  : "No forms yet."}
+              </div>
+            ) : (
+              currentForms.map((f) => (
+                <Card key={f._id} className="p-6">
+                  <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-3 sm:gap-0">
+                    {/* Left section */}
+                    <div className="flex flex-col sm:gap-3">
+                      <div
+                        className="text-lg font-semibold line-clamp-2"
+                        title={f.title || "(untitled)"}
+                      >
+                        {f.title || "(untitled)"}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 mt-1 sm:mt-0">
+                        <Badge
+                          variant="outline"
+                          className="text-sm text-muted-foreground capitalize"
+                        >
+                          {f.type}
+                        </Badge>
+
+                        <Badge
+                          className={cn(
+                            f.isPublished ? "bg-green-700" : "bg-slate-500",
+                            "text-white text-sm"
+                          )}
+                        >
+                          {f.isPublished ? "Live" : "Draft"}
+                        </Badge>
+
+                        {f.isPublished && (
+                          <Badge
+                            className={
+                              f.isPublic
+                                ? "bg-blue-500 text-white text-sm"
+                                : "bg-yellow-300 text-black text-sm"
+                            }
+                          >
+                            {f.isPublic ? "Public" : "Private"}
+                          </Badge>
+                        )}
+                      </div>
+
+                      <div className="text-sm text-muted-foreground mt-1 sm:mt-0 sm:ml-2 truncate">
+                        <div>
+                          {f.questionCount ??
+                            (Array.isArray(f.questions)
+                              ? f.questions.length
+                              : 0)}{" "}
+                          question(s)
+                        </div>
+                        <div>Created {fmtDate(f.createdAt)}</div>
+                      </div>
+                    </div>
+
+                    {/* Right section */}
+                    <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
+                      {renderActionButtons(f)}
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
+            {totalPages > 1 && (
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() =>
+                        currentPage > 1 && setCurrentPage(currentPage - 1)
+                      }
+                      className={cn(
+                        currentPage === 1 && "pointer-events-none opacity-50"
+                      )}
+                    />
+                  </PaginationItem>
+
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <PaginationItem key={i}>
+                      <PaginationLink
+                        isActive={currentPage === i + 1}
+                        onClick={() => setCurrentPage(i + 1)}
+                      >
+                        {i + 1}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() =>
+                        currentPage < totalPages &&
+                        setCurrentPage(currentPage + 1)
+                      }
+                      className={cn(
+                        currentPage === totalPages &&
+                          "pointer-events-none opacity-50"
+                      )}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
+          </div>
         </div>
       </div>
-
-      <SearchAndFilter
-        onSearch={handleSearch}
-        onFilterChange={handleFilterChange}
-      />
-
-      <div className="grid gap-4">
-        {loading ? (
-          <div className="text-muted-foreground text-center">Loading...</div>
-        ) : filteredForms.length === 0 ? (
-          <div className="text-muted-foreground text-center">
-            {searchQuery || Object.values(filters).some((arr) => arr.length > 0)
-              ? "No forms found."
-              : "No forms yet."}
-          </div>
-        ) : (
-          currentForms.map((f) => (
-            <Card key={f._id || f.id} className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-semibold truncate">
-                      {f.title || "(untitled)"}
-                    </h3>
-                    <Badge
-                      variant="outline"
-                      className="text-sm text-muted-foreground capitalize"
-                    >
-                      {f.type}
-                    </Badge>
-                    <Badge
-                      className={cn(
-                        f.isPublished ? "bg-green-700" : "bg-slate-500",
-                        "text-white"
-                      )}
-                    >
-                      {f.isPublished ? "Live" : "Draft"}
-                    </Badge>
-                    {f.isPublished && (
-                      <Badge
-                        className={
-                          f.isPublic
-                            ? "bg-blue-500 text-white"
-                            : "bg-yellow-300 text-black"
-                        }
-                      >
-                        {f.isPublic ? "Public" : "Private"}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="text-sm text-muted-foreground mt-1">
-                    {f.questionCount ??
-                      (Array.isArray(f.questions)
-                        ? f.questions.length
-                        : 0)}{" "}
-                    questions • created {fmtDate(f.createdAt)}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {renderActionButtons(f)}
-                </div>
-              </div>
-            </Card>
-          ))
-        )}
-        {totalPages > 1 && (
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() =>
-                    currentPage > 1 && setCurrentPage(currentPage - 1)
-                  }
-                  className={cn(
-                    currentPage === 1 && "pointer-events-none opacity-50"
-                  )}
-                />
-              </PaginationItem>
-
-              {Array.from({ length: totalPages }, (_, i) => (
-                <PaginationItem key={i}>
-                  <PaginationLink
-                    isActive={currentPage === i + 1}
-                    onClick={() => setCurrentPage(i + 1)}
-                  >
-                    {i + 1}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
-
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() =>
-                    currentPage < totalPages && setCurrentPage(currentPage + 1)
-                  }
-                  className={cn(
-                    currentPage === totalPages &&
-                      "pointer-events-none opacity-50"
-                  )}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        )}
-      </div>
-
       {/* Delete confirmation */}
       <Dialog
         open={!!confirmDelete}
@@ -541,7 +556,7 @@ const Dashboard = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 };
 
@@ -552,6 +567,7 @@ const SearchAndFilter = ({ onSearch, onFilterChange }) => {
     status: [],
     privacy: [],
   });
+  const navigate = useNavigate();
 
   const toggleFilter = (category, value) => {
     setFilters((prev) => {
@@ -569,10 +585,15 @@ const SearchAndFilter = ({ onSearch, onFilterChange }) => {
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-6">
+      <Button variant="outline" onClick={() => navigate("/create")}>
+        <Plus />
+        <span className="hidden xs:inline">Create</span>
+      </Button>
+
       {/* Search input */}
       <Input
         type="text"
-        placeholder="Search forms..."
+        placeholder="Search your forms, surveys and quizzes..."
         value={searchTerm}
         onChange={(e) => {
           setSearchTerm(e.target.value);
