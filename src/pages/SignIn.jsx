@@ -26,17 +26,12 @@ const SignIn = () => {
     setLoading(true);
 
     try {
-      const data = await signInRequest(form);
-      console.log("Sign in successful:", data);
-
-      signIn(data.user, data.token);
+      await signIn(form); // no token handling needed
       toast.success("Sign in successful.");
       navigate("/dashboard");
     } catch (error) {
-      if (!error.isAuthError && !error.isHandled) {
-        const message = error.response?.data?.message || "Something went wrong";
-        toast.error(message);
-      }
+      const message = error.response?.data?.message || "Something went wrong";
+      toast.error(message);
     } finally {
       setLoading(false);
     }

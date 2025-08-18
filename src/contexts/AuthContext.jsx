@@ -1,59 +1,57 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { jwtDecode } from "jwt-decode";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+import axios from "@/lib/axios";
 
-// Create the context
 const AuthContext = createContext(null);
 
-// Provider component to wrap your app
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-
-    if (storedToken) {
-      try {
-        const decoded = jwtDecode(storedToken);
-        if (decoded.exp * 1000 > Date.now()) {
-          setToken(storedToken);
-          setUser(decoded.user);
-          console.log("Decoded: ", decoded);
-        } else {
-          localStorage.removeItem("token");
-          setToken(null);
-          setUser(null);
-        }
-      } catch {
-        localStorage.removeItem("token");
-        setToken(null);
-        setUser(null);
-      }
+  const checkAuth = useCallback(async () => {
+    try {
+      const res = await axios.get("/user/me");
+      console.log("Check auth", res.data);
+      setUser(res.data.user);
+    } catch (error) {
+      console.log("Error while checkAuth", error);
+      setUser(null);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
-  const signIn = (user, token) => {
-    localStorage.setItem("token", token);
-    setUser(user);
-    setToken(token);
-  };
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
-  const signOut = () => {
-    localStorage.removeItem("token");
+  const signIn = useCallback(async (credentials) => {
+    try {
+      const res = await axios.post("/auth/sign-in", credentials);
+      setUser(res.data.user);
+    } catch (err) {
+      console.error("Sign-in failed:", err);
+      throw err;
+    }
+  }, []);
+
+  const signOut = useCallback(async () => {
+    await axios.post("/auth/sign-out");
     setUser(null);
-    setToken(null);
-  };
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, token, signIn, signOut, loading }}>
+    <AuthContext.Provider value={{ user, signIn, signOut, loading }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-// Custom hook to consume auth context
 export function useAuth() {
   return useContext(AuthContext);
 }

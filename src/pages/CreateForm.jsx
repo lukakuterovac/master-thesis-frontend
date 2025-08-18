@@ -24,7 +24,7 @@ import { QuestionCard } from "@/components/QuestionCard";
 import { toast } from "sonner";
 import { createForm, updateForm, deleteForm } from "@/features/form";
 import { Switch } from "@/components/ui/switch";
-import { capitalize } from "@/lib/helpers";
+import { capitalize, toReadableLabel } from "@/lib/helpers";
 
 const formTypes = [
   { value: "form", label: "Form" },
@@ -47,6 +47,7 @@ const CreateForm = () => {
     title: "",
     description: "",
     questions: [],
+    state: "draft",
     isPublic: false,
   });
 
@@ -75,6 +76,7 @@ const CreateForm = () => {
           type: null,
           questionText: "",
           choices: [],
+          required: false,
         },
       ],
     }));
@@ -132,17 +134,17 @@ const CreateForm = () => {
     const errors = [];
 
     if (!form.type) {
-      errors.push("Form type is required.");
+      errors.push("Type is required.");
     }
     if (!form.title || form.title.trim() === "") {
-      errors.push("Form title is required.");
+      errors.push("Title is required.");
     }
     if (!form.description || form.description.trim() === "") {
-      errors.push("Form description is required.");
+      errors.push("Description is required.");
     }
 
     if (!form.questions || form.questions.length === 0) {
-      errors.push("Form has no questions.");
+      errors.push(`${toReadableLabel(form.type)} has no questions.`);
     }
 
     form.questions.forEach((q, index) => {
@@ -183,7 +185,7 @@ const CreateForm = () => {
       toast.error(
         <div>
           <div>
-            <strong>Form is invalid:</strong>
+            <strong>{toReadableLabel(form.type)} is invalid:</strong>
           </div>
           <ul className="mt-1 list-disc list-inside">
             {validationResult.errors.map((error, i) => (
@@ -200,22 +202,23 @@ const CreateForm = () => {
     try {
       const payload = {
         ...form,
-        questions: form.questions.map(({ tempId, ...rest }) => rest),
+        questions: form.questions.map(({ tempId: _, ...rest }) => rest),
       };
+
       if (form._id) {
         const data = await updateForm(form._id, payload);
 
         console.log("Successfully updated form:", data);
-        toast.success("Form updated!");
+        toast.success(`${toReadableLabel(form.type)} updated!`);
       } else {
         const data = await createForm(payload);
         console.log("Successfully created form:", data);
-        toast.success("Form created!");
+        toast.success(`${toReadableLabel(form.type)} created!`);
         setForm(data);
       }
     } catch (error) {
-      if (!error.isAuthError && !error.isHandled) {
-        toast.error("Failed to save form");
+      if (!error.isHandled) {
+        toast.error(`Failed to save ${form.type}`);
       }
     } finally {
       setIsSaving(false);
@@ -231,26 +234,27 @@ const CreateForm = () => {
       form.questions.length === 0;
 
     if (isFormEmpty) {
-      toast.info("Form is empty.");
+      toast.info(`${toReadableLabel(form.type)} is empty.`);
       return;
     }
 
     if (!form._id) {
+      toast.info(`Discarded ${form.type}.`);
       setForm({
         type: null,
         title: "",
         description: "",
         questions: [],
+        state: "draft",
       });
-      toast.info("Discarded form.");
     } else {
       try {
         setIsSaving(true);
         await deleteForm(form._id);
-        toast.success("Form deleted successfully.");
+        toast.success(`${toReadableLabel(form.type)} deleted successfully.`);
       } catch (error) {
-        if (!error.isAuthError && !error.isHandled) {
-          toast.error("Failed to delete form.");
+        if (!error.isHandled) {
+          toast.error(`Failed to delete ${form.type}.`);
         }
       } finally {
         setForm({
@@ -258,6 +262,7 @@ const CreateForm = () => {
           title: "",
           description: "",
           questions: [],
+          state: "draft",
         });
         setIsSaving(false);
       }
@@ -287,7 +292,7 @@ const CreateForm = () => {
     try {
       const payload = {
         ...form,
-        isPublished: true,
+        state: "live",
         questions: form.questions.map(({ tempId, ...rest }) => rest),
       };
 
@@ -296,10 +301,10 @@ const CreateForm = () => {
       } else {
         await createForm(payload);
       }
-      toast.success("Form published successfully!");
+      toast.success(`${toReadableLabel(form.type)} published successfully!`);
     } catch (error) {
-      if (!error.isAuthError && !error.isHandled) {
-        toast.error("Failed to publish form.");
+      if (!error.isHandled) {
+        toast.error("Failed to publish.");
       }
     } finally {
       setIsPublishing(false);

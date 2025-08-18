@@ -1,4 +1,3 @@
-// src/pages/Dashboard.jsx
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -39,25 +38,16 @@ import {
   PaginationNext,
 } from "@/components/ui/pagination";
 
-// --- API helpers you should implement / import from your features folder ---
-// getForms() => GET /api/forms (returns array of forms the user owns)
-// publishForm({ id, isPublished }) => PATCH /api/form/:id (set isPublished, shareId, etc.)
-// updateForm(payload) => PATCH /api/form/:id
-// deleteForm(id) => DELETE /api/form/:id
-// hideForm(id, hide) => PATCH /api/form/:id (set isPublic false or some "hidden" flag)
-// getFormResponses(formId) => GET /api/form/:id/responses
-// The placeholders below assume these functions exist and return JSON or throw on error.
-
 import {
   getUserForms as getForms,
   updateForm as updateFormApi,
   deleteForm as deleteFormApi,
   getFormResponses,
-} from "@/features/form"; // <-- wire these to your real implementations
+} from "@/features/form";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { toReadableLabel } from "@/lib/helpers";
 
-// --- Utility ---
 const fmtDate = (iso) =>
   iso
     ? new Date(iso).toLocaleString("en-US", {
@@ -70,7 +60,6 @@ const Dashboard = () => {
   const [forms, setForms] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [selectedForm, setSelectedForm] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null); // form to delete
   const [confirmPublish, setConfirmPublish] = useState(null); // form to publish/unpublish
 
@@ -99,10 +88,10 @@ const Dashboard = () => {
       : true;
 
     // Status filter
-    // const matchesStatus =
-    //   filters.status.length > 0
-    //     ? filters.status.includes(form.isPublished ? "Live" : "Draft")
-    //     : true;
+    const matchesStatus =
+      filters.status.length > 0
+        ? filters.status.includes(toReadableLabel(form.state))
+        : true;
 
     // Type filter
     const matchesType =
@@ -114,7 +103,7 @@ const Dashboard = () => {
         ? filters.privacy.includes(form.isPublic ? "Public" : "Private")
         : true;
 
-    return matchesSearch && matchesType && matchesPrivacy;
+    return matchesSearch && matchesStatus && matchesType && matchesPrivacy;
   });
 
   const totalPages = Math.max(
@@ -149,7 +138,7 @@ const Dashboard = () => {
       const data = await getForms();
       setForms(Array.isArray(data) ? data : []);
     } catch (error) {
-      if (!error.isAuthError && !error.isHandled) {
+      if (!error.isHandled) {
         toast.error("Failed to load your forms.");
       }
     } finally {
@@ -170,7 +159,7 @@ const Dashboard = () => {
       const responses = await getFormResponses(form._id || form.id);
       setResponsesPreview({ form, responses });
     } catch (error) {
-      if (!error.isAuthError && !error.isHandled) {
+      if (!error.isHandled) {
         toast.error("Failed to load responses.");
       }
     }
@@ -207,7 +196,7 @@ const Dashboard = () => {
       setForms(prevForms);
       setCurrentPage(prevPage);
 
-      if (!error.isAuthError && !error.isHandled) {
+      if (!error.isHandled) {
         toast.error("Failed to delete form.");
       }
     } finally {
@@ -230,7 +219,7 @@ const Dashboard = () => {
       );
     } catch (error) {
       setForms(prev);
-      if (!error.isAuthError && !error.isHandled) {
+      if (!error.isHandled) {
         toast.error("Failed to toggle visibility.");
       }
     }
@@ -240,32 +229,39 @@ const Dashboard = () => {
     setConfirmPublish(form);
   };
 
-  const confirmPublishNow = async (publish = true) => {
+  const confirmPublishNow = async () => {
     const form = confirmPublish;
     if (!form) return;
 
     setDoing(true);
 
     const id = form._id;
-    const prev = forms;
-    const updated = forms.map((f) =>
-      f._id === id ? { ...f, isPublished: publish } : f
-    );
-    setForms(updated);
+
+    // Determine next state
+    const nextStateMap = {
+      draft: "live",
+      live: "closed",
+    };
+    const nextState = nextStateMap[form.state] || "draft";
+
+    const prevForms = forms;
+
+    setForms(forms.map((f) => (f._id === id ? { ...f, state: nextState } : f)));
+
     try {
-      const payload = {
-        isPublished: publish,
-      };
-      const res = await updateFormApi(id, payload);
-      // replace with server response when available
+      const res = await updateFormApi(id, { state: nextState });
       setForms((list) =>
         list.map((f) => ((f._id || f.id) === (res._id || res.id) ? res : f))
       );
-      toast.success(publish ? "Form published" : "Form unpublished");
+      toast.success(
+        `${toReadableLabel(form.type)} state changed to '${toReadableLabel(
+          nextState
+        )}'`
+      );
     } catch (error) {
-      setForms(prev);
-      if (!error.isAuthError && !error.isHandled) {
-        toast.error("Failed to change publish state.");
+      setForms(prevForms);
+      if (!error.isHandled) {
+        toast.error(`Failed to change ${form.type} state.`);
       }
     } finally {
       setConfirmPublish(null);
@@ -276,7 +272,7 @@ const Dashboard = () => {
   const renderActionButtons = (form) => {
     return (
       <div className="flex gap-2">
-        {form.isPublished && (
+        {(form.state === "live" || form.state === "closed") && (
           <Button
             size="sm"
             variant="ghost"
@@ -298,22 +294,24 @@ const Dashboard = () => {
           <span className="font-light hidden md:inline">Edit</span>
         </Button>
 
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => onChangeState(form)}
-          title={form.isPublished ? "Close" : "Publish"}
-        >
-          {form.isPublished ? (
-            <Lock className="w-4 h-4" />
-          ) : (
-            <Upload className="w-4 h-4" />
-          )}
+        {(form.state === "draft" || form.state === "live") && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => onChangeState(form)}
+            title={form.state === "live" ? "Close form" : "Publish form"}
+          >
+            {form.state === "live" ? (
+              <Lock className="w-4 h-4" />
+            ) : (
+              <Upload className="w-4 h-4" />
+            )}
 
-          <span className="font-light hidden md:inline">
-            {form.isPublished ? "Close" : "Publish"}
-          </span>
-        </Button>
+            <span className="font-light hidden md:inline">
+              {form.state === "live" ? "Close" : "Publish"}
+            </span>
+          </Button>
+        )}
 
         <Button
           size="sm"
@@ -375,14 +373,18 @@ const Dashboard = () => {
 
                         <Badge
                           className={cn(
-                            f.isPublished ? "bg-green-700" : "bg-slate-500",
+                            {
+                              "bg-slate-500": f.state === "draft",
+                              "bg-green-700": f.state === "live",
+                              "bg-red-700": f.state === "closed",
+                            },
                             "text-white text-sm"
                           )}
                         >
-                          {f.isPublished ? "Live" : "Draft"}
+                          {toReadableLabel(f.state)}
                         </Badge>
 
-                        {f.isPublished && (
+                        {f.state === "live" && (
                           <Badge
                             className={
                               f.isPublic
@@ -458,13 +460,16 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
       {/* Delete confirmation */}
       <Dialog
         open={!!confirmDelete}
         onOpenChange={() => setConfirmDelete(null)}
       >
         <DialogContent>
-          <h3 className="text-lg font-semibold">Delete form</h3>
+          <h3 className="text-lg font-semibold">
+            Delete {confirmDelete?.type}
+          </h3>
           <p className="text-sm text-muted-foreground mt-2">
             Are you sure you want to permanently delete "{confirmDelete?.title}
             "? This action cannot be undone.
@@ -484,33 +489,35 @@ const Dashboard = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Publish confirmation */}
+      {/* Change state confirmation */}
       <Dialog
         open={!!confirmPublish}
         onOpenChange={() => setConfirmPublish(null)}
       >
         <DialogContent>
-          <h3 className="text-lg font-semibold">
-            {confirmPublish?.isPublished ? "Unpublish form" : "Publish form"}
-          </h3>
+          <h3 className="text-lg font-semibold">Change form state</h3>
           <p className="text-sm text-muted-foreground mt-2">
-            {confirmPublish?.isPublished
-              ? `Unpublishing will remove the public availability of "${confirmPublish?.title}". Are you sure?`
-              : `Publishing will make "${confirmPublish?.title}" available to respondents. Continue?`}
+            Are you sure you want to change "{confirmPublish?.title}" from{" "}
+            {toReadableLabel(confirmPublish?.state)} to{" "}
+            {toReadableLabel(
+              { draft: "live", live: "closed", closed: "draft" }[
+                confirmPublish?.state
+              ]
+            )}
+            ?
           </p>
           <div className="mt-4 flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setConfirmPublish(null)}>
               Cancel
             </Button>
-            <Button
-              onClick={() => confirmPublishNow(!confirmPublish?.isPublished)}
-              disabled={doing}
-            >
+            <Button onClick={confirmPublishNow} disabled={doing}>
               {doing
                 ? "Working..."
-                : confirmPublish?.isPublished
-                ? "Unpublish"
-                : "Publish"}
+                : `Change to ${
+                    { draft: "Live", live: "Closed", closed: "Draft" }[
+                      confirmPublish?.state
+                    ]
+                  }`}
             </Button>
           </div>
         </DialogContent>

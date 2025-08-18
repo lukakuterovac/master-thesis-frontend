@@ -1,6 +1,4 @@
 import { Link } from "react-router-dom";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import {
@@ -15,7 +13,7 @@ import DarkModeToggle from "@/components/DarkModeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function Header() {
-  const { token, signOut } = useAuth();
+  const { user, signOut } = useAuth();
 
   return (
     <header className="w-full border-b shadow-sm">
@@ -32,7 +30,7 @@ export default function Header() {
               <Menu className="w-6 h-6" />
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              {token && (
+              {user && (
                 <>
                   <Link to="/dashboard">
                     <DropdownMenuItem>Dashboard</DropdownMenuItem>
@@ -44,14 +42,14 @@ export default function Header() {
               <DropdownMenuLabel className="text-gray-500">
                 Account
               </DropdownMenuLabel>
-              {token && (
+              {user && (
                 <>
                   <Link onClick={signOut}>
                     <DropdownMenuItem>Sign Out</DropdownMenuItem>
                   </Link>
                 </>
               )}
-              {!token && (
+              {!user && (
                 <>
                   <Link to="/sign-in">
                     <DropdownMenuItem>Sign In</DropdownMenuItem>

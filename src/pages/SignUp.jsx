@@ -49,7 +49,7 @@ const SignUp = () => {
       toast.success("Account created successfully.");
       navigate("/sign-in");
     } catch (error) {
-      if (!error.isAuthError && !error.isHandled) {
+      if (!error.isHandled) {
         const message = error.response?.data?.message || "Something went wrong";
         toast.error(message);
       }
@@ -133,7 +133,10 @@ const SignUp = () => {
 
           <p className="text-sm text-center text-gray-500 mt-4">
             Already have an account?{" "}
-            <a href="/sign-in" className="text-blue-600 hover:underline">
+            <a
+              href="/sign-in"
+              className="text-purple-900 hover:text-purple-900/90"
+            >
               Sign In
             </a>
           </p>
