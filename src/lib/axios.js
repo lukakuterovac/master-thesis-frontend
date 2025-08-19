@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getNavigate } from "./helpers";
+import { getExternalSignOut } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 const instance = axios.create({
@@ -7,38 +7,49 @@ const instance = axios.create({
   withCredentials: true,
 });
 
+const handleSignOut = (msg) => {
+  toast.error(msg);
+  console.log(msg);
+  const signOut = getExternalSignOut();
+  if (signOut) signOut();
+};
+
 instance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    const isTokenExpired = error.response?.data?.message === "Token expired";
-    const isUnauthorized = error.response?.status === 401;
+    const message = error.response?.data?.message;
+    const status = error.response?.status;
 
-    // Condition to trigger the refresh token flow
+    const isUnauthorized = status === 401;
+    const isTokenExpired = message === "Token expired";
+    const isNoAccessToken = message === "No access token";
+    const isInvalidToken = message === "Invalid token";
+
+    // Detect if this was the silent auth check
+    const isAuthCheck = originalRequest?.url?.includes("/user/me");
+
+    // --- Refresh flow ---
     if (isUnauthorized && isTokenExpired && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
         await instance.post("/auth/refresh-token");
         return instance(originalRequest);
       } catch (refreshError) {
-        // This 'catch' block is for when the refresh token itself is invalid or expired
-        toast.error("Your session has expired. Please sign in again.");
-        // Mark the error as handled to prevent the component's catch block from running
-        refreshError.isHandled = true;
-
-        const navigate = getNavigate();
-        if (navigate) {
-          setTimeout(() => navigate("/sign-in"), 100);
-        } else {
-          setTimeout(() => (window.location.href = "/sign-in"), 100);
+        if (!isAuthCheck) {
+          handleSignOut("Your session has expired. Please sign in again.");
         }
-        // Explicitly return a rejected promise here to stop the flow
         return Promise.reject(refreshError);
       }
     }
 
-    // For any other error (including a non-expired 401), reject the promise
-    // This allows the component's catch block to handle it if needed
+    // --- Direct logout ---
+    if (isUnauthorized && (isNoAccessToken || isInvalidToken)) {
+      if (!isAuthCheck) {
+        handleSignOut("Please sign in to continue.");
+      }
+    }
+
     return Promise.reject(error);
   }
 );

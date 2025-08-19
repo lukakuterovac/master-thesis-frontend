@@ -9,6 +9,8 @@ import axios from "@/lib/axios";
 
 const AuthContext = createContext(null);
 
+let externalSignOut = null;
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -45,6 +47,8 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  externalSignOut = signOut;
+
   return (
     <AuthContext.Provider value={{ user, signIn, signOut, loading }}>
       {children}
@@ -55,3 +59,5 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   return useContext(AuthContext);
 }
+
+export const getExternalSignOut = () => externalSignOut;
