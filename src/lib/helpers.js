@@ -22,3 +22,11 @@ export const toReadableLabel = (str) => {
   // Capitalize first word
   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 };
+
+export const fmtDate = (iso) =>
+  iso
+    ? new Date(iso).toLocaleString("en-US", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      })
+    : "-";

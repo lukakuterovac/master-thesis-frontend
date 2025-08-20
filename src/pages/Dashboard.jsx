@@ -50,13 +50,7 @@ import { toReadableLabel } from "@/lib/helpers";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 
-const fmtDate = (iso) =>
-  iso
-    ? new Date(iso).toLocaleString("en-US", {
-        dateStyle: "medium",
-        timeStyle: "short",
-      })
-    : "-";
+import { fmtDate } from "@/lib/helpers";
 
 const Dashboard = () => {
   const { user } = useAuth();
