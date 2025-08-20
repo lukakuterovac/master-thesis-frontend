@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/popover";
 
 import { Check, ArrowUp, ArrowDown, Trash2, Plus } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const questionTypes = [
   { value: "short-text", label: "Short text" },
@@ -54,6 +55,10 @@ export const QuestionCard = ({
 
   const handleTitleChange = (e) => {
     onChange({ ...question, questionText: e.target.value });
+  };
+
+  const handleRequiredChange = (checked) => {
+    onChange({ ...question, required: checked });
   };
 
   const renderDropdown = () => (
@@ -236,6 +241,18 @@ export const QuestionCard = ({
       </div>
 
       {renderAdditionalContent()}
+
+      <Label
+        htmlFor={`required-${question._id || question.tempId}`}
+        className="ml-auto text-sm w-max font-medium cursor-pointer border rounded-md px-4 py-2"
+      >
+        <Checkbox
+          id={`required-${question._id || question.tempId}`}
+          checked={question.required}
+          onCheckedChange={handleRequiredChange}
+        />
+        Required
+      </Label>
     </Card>
   );
 };

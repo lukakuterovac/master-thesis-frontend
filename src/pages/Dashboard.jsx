@@ -47,6 +47,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { toReadableLabel } from "@/lib/helpers";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const fmtDate = (iso) =>
   iso
@@ -57,6 +59,9 @@ const fmtDate = (iso) =>
     : "-";
 
 const Dashboard = () => {
+  const { user } = useAuth();
+  const { theme } = useTheme();
+
   const [forms, setForms] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -136,7 +141,14 @@ const Dashboard = () => {
     setLoading(true);
     try {
       const data = await getForms();
-      setForms(Array.isArray(data) ? data : []);
+
+      const sorted = Array.isArray(data)
+        ? [...data].sort(
+            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+          )
+        : [];
+
+      setForms(sorted);
     } catch (error) {
       if (!error.isHandled) {
         toast.error("Failed to load your forms.");
@@ -331,7 +343,17 @@ const Dashboard = () => {
     <>
       <div className="flex justify-center px-4">
         <div className="w-full max-w-3xl">
-          <div className="text-3xl font-bold mb-3">Dashboard</div>
+          <div className="text-4xl md:text-6xl font-bold mb-6 md:mb-12 truncate">
+            {user.username}
+          </div>
+          <div
+            className={cn(
+              "text-2xl md:text-3xl font-bold  mb-3",
+              theme === "dark" ? "text-gray-400" : "text-gray-600"
+            )}
+          >
+            Dashboard
+          </div>
 
           <SearchAndFilter
             onSearch={handleSearch}

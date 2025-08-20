@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { createForm, updateForm, deleteForm } from "@/features/form";
 import { Switch } from "@/components/ui/switch";
 import { capitalize, toReadableLabel } from "@/lib/helpers";
+import DatePicker from "@/components/DatePicker";
 
 const formTypes = [
   { value: "form", label: "Form" },
@@ -59,7 +60,7 @@ const CreateForm = () => {
 
   const [settingsSidebarOpen, setSettingsSidebarOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isPublishing, setIsPublishing] = useState(false);
+  const [isChangingState, setIsChangingState] = useState(false);
 
   // Handlers
   const setFormField = useCallback((field, value) => {
@@ -269,7 +270,7 @@ const CreateForm = () => {
     }
   };
 
-  const publishForm = async () => {
+  const updateFormState = async () => {
     const validationResult = validateForm();
     if (!validationResult.isValid) {
       toast.error(
@@ -287,12 +288,17 @@ const CreateForm = () => {
       return;
     }
 
-    setIsPublishing(true);
+    setIsChangingState(true);
 
     try {
+      // Define the state cycle
+      const stateCycle = ["draft", "live", "closed"];
+      const currentIndex = stateCycle.indexOf(form.state);
+      const nextState = stateCycle[(currentIndex + 1) % stateCycle.length];
+
       const payload = {
         ...form,
-        state: "live",
+        state: nextState,
         questions: form.questions.map(({ tempId, ...rest }) => rest),
       };
 
@@ -301,18 +307,35 @@ const CreateForm = () => {
       } else {
         await createForm(payload);
       }
-      toast.success(`${toReadableLabel(form.type)} published successfully!`);
+
+      toast.success(
+        `${toReadableLabel(form.type)} ${
+          nextState === "live"
+            ? "published"
+            : nextState === "closed"
+            ? "closed"
+            : "saved as draft"
+        } successfully!`
+      );
+
+      // Update local form state
+      setForm(payload);
     } catch (error) {
       if (!error.isHandled) {
-        toast.error("Failed to publish.");
+        toast.error("Failed to update form state.");
       }
     } finally {
-      setIsPublishing(false);
+      setIsChangingState(false);
     }
   };
 
   const toggleIsPublic = () => {
     setFormField("isPublic", !form.isPublic);
+  };
+
+  const setExpirationDate = (date) => {
+    console.log("New date", date);
+    setFormField("expiresAt", date);
   };
 
   return (
@@ -332,10 +355,10 @@ const CreateForm = () => {
             <FormControlButtons
               form={form}
               isSaving={isSaving}
-              isPublishing={isPublishing}
+              isChangingState={isChangingState}
               addQuestion={addQuestion}
               saveForm={handleSubmit}
-              publishForm={publishForm}
+              updateFormState={updateFormState}
               deleteForm={onDeleteForm}
             />
           </div>
@@ -391,7 +414,7 @@ const CreateForm = () => {
               <Button
                 variant="ghost"
                 className="flex items-center justify-center gap-2 hover:text-primary/90"
-                disabled={!form.type || isSaving || isPublishing}
+                disabled={!form.type || isSaving || isChangingState}
                 onClick={addQuestion}
                 aria-label="Add question"
               >
@@ -424,71 +447,76 @@ const CreateForm = () => {
         title={form.type ? `${capitalize(form.type)} settings` : "Settings"}
       >
         <div className="flex flex-col space-y-6">
-          {/* General Section */}
-          <div>
-            <div className="mb-2 text-sm font-medium">Visibility</div>
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="is-public"
-                className={cn(
-                  form.isPublic ? "text-primary/50" : "",
-                  "text-sm"
-                )}
-              >
-                Private
-              </Label>
-              <Switch
-                id="is-public"
-                checked={form.isPublic}
-                onCheckedChange={toggleIsPublic}
-              />
-              <Label
-                htmlFor="is-public"
-                className={cn(
-                  form.isPublic ? "" : "text-primary/50",
-                  "text-sm"
-                )}
-              >
-                Public
-              </Label>
+          <div className="flex flex-col space-y-6">
+            {/* General Section */}
+            <div>
+              <div className="mb-2 text-sm font-medium">Visibility</div>
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="is-public"
+                  className={cn(
+                    form.isPublic ? "text-primary/50" : "",
+                    "text-sm"
+                  )}
+                >
+                  Private
+                </Label>
+                <Switch
+                  id="is-public"
+                  checked={form.isPublic}
+                  onCheckedChange={toggleIsPublic}
+                />
+                <Label
+                  htmlFor="is-public"
+                  className={cn(
+                    form.isPublic ? "" : "text-primary/50",
+                    "text-sm"
+                  )}
+                >
+                  Public
+                </Label>
+              </div>
             </div>
-          </div>
-          {/* Expiration Date Section */}
-          <div>
-            <div className="mb-2 text-sm font-medium">Expiration</div>
-            <Input
-              type="date"
-              id="expires-at"
-              value={form.expiresAt ? form.expiresAt.split("T")[0] : ""}
-              onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
-              className="max-w-[200px]"
-            />
-            <p className="mt-1 text-xs text-muted-foreground">
-              Leave empty for no expiration.
-            </p>
-          </div>
 
-          {/* Response Limit Section */}
-          <div>
-            <div className="mb-2 text-sm font-medium">Response Limit</div>
-            <Input
-              type="number"
-              id="response-limit"
-              min="1"
-              value={form.responseLimit || ""}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  responseLimit: e.target.value
-                    ? parseInt(e.target.value, 10)
-                    : "",
-                })
-              }
-              className="max-w-[120px]"
-            />
-            <p className="mt-1 text-xs text-muted-foreground">
-              Leave empty for unlimited responses.
-            </p>
+            {/* Expiration Date Section */}
+            <div>
+              <div className="mb-2 text-sm font-medium">Expiration</div>
+              <DatePicker
+                form={form}
+                updateDate={setExpirationDate}
+                disabledDates={(date) => {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  return date <= today || date < new Date("1900-01-01");
+                }}
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Leave empty for no expiration.
+              </p>
+            </div>
+
+            {/* Response Limit Section */}
+            <div>
+              <div className="mb-2 text-sm font-medium">Response Limit</div>
+              <Input
+                type="number"
+                id="response-limit"
+                min="1"
+                value={form.responseLimit || ""}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    responseLimit: e.target.value
+                      ? parseInt(e.target.value, 10)
+                      : "",
+                  })
+                }
+                className="w-full"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Leave empty for unlimited responses.
+              </p>
+            </div>
           </div>
         </div>
       </Sidebar>
@@ -546,19 +574,19 @@ const FormTypeButton = ({ formType, setFormField }) => (
 const FormControlButtons = ({
   form,
   isSaving,
-  isPublishing,
+  isChangingState,
   saveForm,
-  publishForm,
+  updateFormState,
   deleteForm,
 }) => {
-  const buttonsDisabled = !form.type || isSaving || isPublishing;
+  const buttonsDisabled = !form.type || isSaving || isChangingState;
 
   const buttons = (
     <>
       <Button
         variant="ghost"
         className="flex items-center justify-center gap-2 hover:text-blue-500"
-        disabled={buttonsDisabled}
+        disabled={buttonsDisabled || form.state === "closed"}
         onClick={saveForm}
         type="submit"
         aria-label={`Save ${form.type ? form.type : ""}`}
@@ -572,19 +600,42 @@ const FormControlButtons = ({
 
       <Button
         variant="ghost"
-        className="flex items-center justify-center gap-2 hover:text-green-500"
-        disabled={buttonsDisabled}
-        onClick={publishForm}
-        aria-label={`Publish ${form.type ? form.type : ""}`}
+        className={cn(
+          "flex items-center justify-center gap-2",
+          form.state === "draft"
+            ? "hover:text-green-500"
+            : form.state === "live"
+            ? "hover:text-yellow-500"
+            : "cursor-not-allowed opacity-50"
+        )}
+        disabled={buttonsDisabled || form.state === "closed"}
+        onClick={updateFormState}
+        aria-label={`${
+          form.state === "draft"
+            ? "Publish"
+            : form.state === "live"
+            ? "Close"
+            : ""
+        } ${form.type ?? ""}`}
       >
         <Share className="w-4 h-4" />
         <span className="hidden xs:inline">
-          {isPublishing
-            ? "Publishing..."
-            : `Publish ${form.type ? form.type : ""}`}
+          {form.state === "draft"
+            ? isChangingState
+              ? "Publishing..."
+              : `Publish ${form.type ?? ""}`
+            : form.state === "live"
+            ? `Close ${form.type ?? ""}`
+            : "Closed"}
         </span>
         <span className="inline xs:hidden">
-          {isPublishing ? "Publishing" : "Publish"}
+          {form.state === "draft"
+            ? isChangingState
+              ? "Publishing"
+              : "Publish"
+            : form.state === "live"
+            ? `Close ${form.type ?? ""}`
+            : "Closed"}
         </span>
       </Button>
 
