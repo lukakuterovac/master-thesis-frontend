@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useLocation, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,9 +16,19 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useLocation } from "react-router-dom";
 
-import { Check, Settings2, Save, Trash2, Plus, Share } from "lucide-react";
+import {
+  Check,
+  Settings2,
+  Save,
+  Trash2,
+  Plus,
+  Share,
+  Loader,
+  Copy,
+  Mail,
+  QrCode,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/Sidebar";
 import { QuestionCard } from "@/components/QuestionCard";
@@ -26,6 +37,14 @@ import { createForm, updateForm, deleteForm } from "@/features/form";
 import { Switch } from "@/components/ui/switch";
 import { capitalize, toReadableLabel } from "@/lib/helpers";
 import DatePicker from "@/components/DatePicker";
+import axios from "@/lib/axios";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { QRCodeCanvas } from "qrcode.react";
 
 const formTypes = [
   { value: "form", label: "Form" },
@@ -42,6 +61,7 @@ function reorderArray(array, fromIndex, toIndex) {
 
 const CreateForm = () => {
   const location = useLocation();
+  const { id } = useParams();
 
   const [form, setForm] = useState({
     type: null,
@@ -51,16 +71,45 @@ const CreateForm = () => {
     state: "draft",
     isPublic: false,
   });
-
-  useEffect(() => {
-    if (location.state?.form) {
-      setForm(location.state.form);
-    }
-  }, [location.state]);
+  const [loading, setLoading] = useState(true);
 
   const [settingsSidebarOpen, setSettingsSidebarOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isChangingState, setIsChangingState] = useState(false);
+
+  const [copied, setCopied] = useState(false);
+  const [showQR, setShowQR] = useState(false);
+  const [email, setEmail] = useState("");
+
+  const shareLink = `${window.location.origin}/fill/${form.shareId}`;
+
+  useEffect(() => {
+    // Case 1: form is passed in via location.state
+    if (location.state?.form) {
+      setForm(location.state.form);
+      setLoading(false);
+      return;
+    }
+
+    // Case 2: no form in state, fetch using ID if available
+    if (id) {
+      const fetchForm = async () => {
+        try {
+          const res = await axios.get(`/forms/${id}`);
+          setForm(res.data);
+        } catch (err) {
+          console.error("Failed to fetch form:", err);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchForm();
+    } else {
+      // Case 3: creating a new form
+      setLoading(false);
+    }
+  }, [id, location.state]);
 
   // Handlers
   const setFormField = useCallback((field, value) => {
@@ -338,6 +387,30 @@ const CreateForm = () => {
     setFormField("expiresAt", date);
   };
 
+  const handleCopyShareLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
+  const handleSendEmail = () => {
+    console.log("Send email invite to:", email, "with link:", shareLink);
+    setEmail("");
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader className="w-8 h-8 text-primary animate-spin" />
+        <div>Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="max-w-4xl mx-auto space-y-6">
@@ -446,41 +519,41 @@ const CreateForm = () => {
         onClose={() => setSettingsSidebarOpen(false)}
         title={form.type ? `${capitalize(form.type)} settings` : "Settings"}
       >
-        <div className="flex flex-col space-y-6">
-          <div className="flex flex-col space-y-6">
-            {/* General Section */}
-            <div>
-              <div className="mb-2 text-sm font-medium">Visibility</div>
-              <div className="flex items-center gap-2">
-                <Label
-                  htmlFor="is-public"
-                  className={cn(
-                    form.isPublic ? "text-primary/50" : "",
-                    "text-sm"
-                  )}
-                >
-                  Private
-                </Label>
-                <Switch
-                  id="is-public"
-                  checked={form.isPublic}
-                  onCheckedChange={toggleIsPublic}
-                />
-                <Label
-                  htmlFor="is-public"
-                  className={cn(
-                    form.isPublic ? "" : "text-primary/50",
-                    "text-sm"
-                  )}
-                >
-                  Public
-                </Label>
-              </div>
+        <div className="flex flex-col space-y-8">
+          {/* General Section */}
+          <div className="space-y-3">
+            <div className="text-sm font-medium">Visibility</div>
+            <div className="flex items-center gap-3">
+              <Label
+                htmlFor="is-public"
+                className={cn(
+                  form.isPublic ? "text-primary/50" : "",
+                  "text-sm"
+                )}
+              >
+                Private
+              </Label>
+              <Switch
+                id="is-public"
+                checked={form.isPublic}
+                onCheckedChange={toggleIsPublic}
+              />
+              <Label
+                htmlFor="is-public"
+                className={cn(
+                  form.isPublic ? "" : "text-primary/50",
+                  "text-sm"
+                )}
+              >
+                Public
+              </Label>
             </div>
+          </div>
 
-            {/* Expiration Date Section */}
-            <div>
-              <div className="mb-2 text-sm font-medium">Expiration</div>
+          {/* Expiration Date Section */}
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Expiration</div>
+            <div className="w-64">
               <DatePicker
                 form={form}
                 updateDate={setExpirationDate}
@@ -490,14 +563,16 @@ const CreateForm = () => {
                   return date <= today || date < new Date("1900-01-01");
                 }}
               />
-              <p className="mt-1 text-xs text-muted-foreground">
-                Leave empty for no expiration.
-              </p>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Leave empty for no expiration.
+            </p>
+          </div>
 
-            {/* Response Limit Section */}
-            <div>
-              <div className="mb-2 text-sm font-medium">Response Limit</div>
+          {/* Response Limit Section */}
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Response Limit</div>
+            <div className="w-64">
               <Input
                 type="number"
                 id="response-limit"
@@ -511,15 +586,98 @@ const CreateForm = () => {
                       : "",
                   })
                 }
-                className="w-full"
               />
-              <p className="mt-1 text-xs text-muted-foreground">
-                Leave empty for unlimited responses.
-              </p>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Leave empty for unlimited responses.
+            </p>
           </div>
+
+          {form.state === "live" && (
+            <div className="space-y-3">
+              <div className="text-sm font-medium">Share</div>
+              {/* Copy Link Button */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleCopyShareLink}
+                  className="relative w-full h-9 flex items-center justify-center gap-2 overflow-hidden"
+                >
+                  {/* Copy State */}
+                  <span
+                    className={cn(
+                      "absolute inset-0 flex items-center justify-center gap-2 transition-all duration-300",
+                      copied
+                        ? "opacity-0 translate-y-2"
+                        : "opacity-100 translate-y-0"
+                    )}
+                  >
+                    <Copy className="w-4 h-4" />
+                    Copy share link
+                  </span>
+
+                  {/* Copied State */}
+                  <span
+                    className={cn(
+                      "absolute inset-0 flex items-center justify-center gap-2 transition-all duration-300",
+                      copied
+                        ? "opacity-100 translate-y-0"
+                        : "opacity-0 translate-y-2"
+                    )}
+                  >
+                    <Check className="w-4 h-4 text-green-500" />
+                    Copied!
+                  </span>
+                </Button>
+              </div>
+
+              <div>
+                <Button
+                  variant="outline"
+                  className="w-full h-9"
+                  onClick={() => setShowQR(true)}
+                >
+                  <QrCode className="w-4 h-4 mr-2" />
+                  Show QR
+                </Button>
+              </div>
+
+              {/* Email Invite */}
+              <div className="flex items-center gap-2">
+                <Input
+                  type="email"
+                  placeholder="Enter email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full h-9"
+                />
+                <Button
+                  variant="outline"
+                  onClick={handleSendEmail}
+                  disabled={!email.trim()}
+                  className="h-9"
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  Send Invite
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </Sidebar>
+
+      <Dialog open={showQR} onOpenChange={setShowQR}>
+        <DialogContent
+          className="flex flex-col items-center space-y-4"
+          description="QR Code dialog"
+        >
+          <DialogHeader>
+            <DialogTitle>Scan to open link</DialogTitle>
+          </DialogHeader>
+          <QRCodeCanvas value={shareLink} size={200} />
+          <p className="text-xs text-muted-foreground">{shareLink}</p>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

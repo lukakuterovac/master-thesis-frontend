@@ -45,7 +45,7 @@ const Sidebar = ({ isOpen, onClose, title, children }) => {
         {/* Sidebar Panel */}
         <div
           className={cn(
-            "absolute right-0 top-0 bottom-0 h-auto w-full xs:w-[70%] sm:max-w-xl bg-primary-foreground xs:rounded-l-xl shadow-xl transition-transform duration-300 ease-in-out",
+            "absolute right-0 top-0 bottom-0 h-auto w-full xs:w-[70%] sm:max-w-[400px] bg-primary-foreground xs:rounded-l-xl shadow-xl transition-transform duration-300 ease-in-out",
             isOpen ? "translate-x-0" : "translate-x-full"
           )}
         >

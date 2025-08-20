@@ -45,7 +45,7 @@ function AppRouter() {
         />
 
         <Route
-          path="/edit"
+          path="/edit/:id"
           element={
             <PrivateRoute>
               <CreateForm />

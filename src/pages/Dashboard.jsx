@@ -163,7 +163,7 @@ const Dashboard = () => {
   }, [fetchForms]);
 
   const onEdit = (form) => {
-    navigate("/edit", { state: { form: form } });
+    navigate(`/edit/${form._id}`, { state: { form: form } });
   };
 
   const onViewResponses = async (form) => {
