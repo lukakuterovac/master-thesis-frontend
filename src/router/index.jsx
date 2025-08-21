@@ -10,6 +10,8 @@ import {
   CreateForm,
   FillForm,
   Explore,
+  Responses,
+  UserSettings,
 } from "@/pages";
 
 function AppRouter() {
@@ -49,6 +51,24 @@ function AppRouter() {
           element={
             <PrivateRoute>
               <CreateForm />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/responses/:id"
+          element={
+            <PrivateRoute>
+              <Responses />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/user-settings"
+          element={
+            <PrivateRoute>
+              <UserSettings />
             </PrivateRoute>
           }
         />

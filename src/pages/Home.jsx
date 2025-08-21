@@ -24,7 +24,7 @@ const Home = () => {
 
       {/* Key Features */}
       <div className="grid gap-6 md:grid-cols-3 mb-16">
-        <Card>
+        <Card className="hover:bg-purple-950/20 transition-colors">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Plus className="w-5 h-5 text-primary" />
@@ -38,7 +38,7 @@ const Home = () => {
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover:bg-purple-950/20 transition-colors">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Workflow className="w-5 h-5 text-green-500" />
@@ -51,7 +51,7 @@ const Home = () => {
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover:bg-purple-950/20 transition-colors">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart className="w-5 h-5 text-zinc-400" />
@@ -70,7 +70,7 @@ const Home = () => {
       <div className="mb-16">
         <h2 className="text-2xl font-bold  mb-8">How It Works</h2>
         <div className="grid md:grid-cols-3 gap-6">
-          <Card>
+          <Card className="hover:bg-purple-950/20 transition-colors">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Plus className="w-5 h-5 text-primary" />
@@ -83,7 +83,7 @@ const Home = () => {
               </p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="hover:bg-purple-950/20 transition-colors">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Link2 className="w-5 h-5 text-blue-500" />
@@ -97,7 +97,7 @@ const Home = () => {
               </p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="hover:bg-purple-950/20 transition-colors">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart className="w-5 h-5 text-purple-500" />
@@ -116,7 +116,7 @@ const Home = () => {
       {/* Main Actions */}
       <h2 className="text-2xl font-bold  mb-8">Jump into action</h2>
       <div className="grid gap-6 md:grid-cols-2">
-        <Card>
+        <Card className="hover:bg-purple-950/20 transition-colors">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Plus className="w-5 h-5 text-primary" />
@@ -136,7 +136,7 @@ const Home = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:bg-purple-950/20 transition-colors">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-yellow-500" />
@@ -157,7 +157,7 @@ const Home = () => {
         </Card>
       </div>
 
-      <Card className="mt-6">
+      <Card className="hover:bg-purple-950/20 transition-colors mt-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <LayoutDashboard className="w-5 h-5 text-purple-500" />

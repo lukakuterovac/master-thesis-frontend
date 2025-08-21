@@ -5,3 +5,5 @@ export { default as Dashboard } from "./Dashboard";
 export { default as CreateForm } from "./CreateForm";
 export { default as FillForm } from "./FillForm";
 export { default as Explore } from "./Explore";
+export { default as Responses } from "./Responses";
+export { default as UserSettings } from "./UserSettings";
