@@ -294,7 +294,7 @@ const Dashboard = () => {
           size="sm"
           variant="ghost"
           onClick={() => onEdit(form)}
-          title="Edit form"
+          title={`Edit ${form.type}`}
         >
           <Edit className="w-4 h-4" />
           <span className="font-light hidden md:inline">Edit</span>
@@ -305,7 +305,11 @@ const Dashboard = () => {
             size="sm"
             variant="ghost"
             onClick={() => onChangeState(form)}
-            title={form.state === "live" ? "Close form" : "Publish form"}
+            title={
+              form.state === "live"
+                ? `Close ${form.type}`
+                : `Publish ${form.type}`
+            }
           >
             {form.state === "live" ? (
               <Lock className="w-4 h-4" />
@@ -368,7 +372,10 @@ const Dashboard = () => {
               </div>
             ) : (
               currentForms.map((f) => (
-                <Card key={f._id} className="p-6">
+                <Card
+                  key={f._id}
+                  className="p-6 hover:border-purple-500 transition-all duration-300"
+                >
                   <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-3 sm:gap-0">
                     {/* Left section */}
                     <div className="flex flex-col sm:gap-3">
