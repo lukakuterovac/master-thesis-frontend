@@ -32,6 +32,9 @@ export default function Header() {
             <DropdownMenuContent>
               {user && (
                 <>
+                  <Link to="/user-settings">
+                    <DropdownMenuItem>Settings</DropdownMenuItem>
+                  </Link>
                   <Link to="/dashboard">
                     <DropdownMenuItem>Dashboard</DropdownMenuItem>
                   </Link>

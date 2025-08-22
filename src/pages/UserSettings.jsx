@@ -102,7 +102,12 @@ const UserSettings = () => {
               onChange={(e) => setUsername(e.target.value)}
             />
           </div>
-          <Button onClick={handleUpdateUsername} disabled={loading}>
+          <Button
+            variant="outline"
+            onClick={handleUpdateUsername}
+            disabled={loading}
+            className={"w-full"}
+          >
             Update Username
           </Button>
         </CardContent>
@@ -124,7 +129,12 @@ const UserSettings = () => {
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
-          <Button onClick={handleUpdateEmail} disabled={loading}>
+          <Button
+            variant="outline"
+            onClick={handleUpdateEmail}
+            disabled={loading}
+            className={"w-full"}
+          >
             Update Email
           </Button>
         </CardContent>
@@ -164,7 +174,12 @@ const UserSettings = () => {
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
           </div>
-          <Button onClick={handleUpdatePassword} disabled={loading}>
+          <Button
+            variant="outline"
+            onClick={handleUpdatePassword}
+            disabled={loading}
+            className={"w-full"}
+          >
             Update Password
           </Button>
         </CardContent>
