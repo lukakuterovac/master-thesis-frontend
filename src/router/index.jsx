@@ -72,7 +72,6 @@ function AppRouter() {
             </PrivateRoute>
           }
         />
-        {/* Add more protected routes here */}
       </Route>
     </Routes>
   );

@@ -70,13 +70,13 @@ const Explore = () => {
     });
   }, [forms, searchTerm, filters.type]);
 
-  if (loading) {
+  if (loading)
     return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      <div className="h-screen flex flex-col justify-center items-center px-4">
+        <Loader2 className="animate-spin" size={32} />
+        <div className="text-center">Loading...</div>
       </div>
     );
-  }
 
   return (
     <div className="flex justify-center px-4">
@@ -148,18 +148,6 @@ const Explore = () => {
                     >
                       {f.type}
                     </Badge>
-
-                    {f.state === "live" && (
-                      <Badge
-                        className={
-                          f.isPublic
-                            ? "bg-blue-500 text-white text-sm"
-                            : "bg-yellow-300 text-black text-sm"
-                        }
-                      >
-                        {f.isPublic ? "Public" : "Private"}
-                      </Badge>
-                    )}
                   </div>
 
                   <div className="text-sm text-muted-foreground mt-1 truncate">

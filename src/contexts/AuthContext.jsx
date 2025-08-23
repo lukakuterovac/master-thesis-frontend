@@ -47,10 +47,22 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  const updateUser = useCallback(
+    (updatedFields) => {
+      setUser((prev) => ({
+        ...prev,
+        ...updatedFields,
+      }));
+    },
+    [setUser]
+  );
+
   externalSignOut = signOut;
 
   return (
-    <AuthContext.Provider value={{ user, signIn, signOut, loading }}>
+    <AuthContext.Provider
+      value={{ user, signIn, signOut, loading, updateUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

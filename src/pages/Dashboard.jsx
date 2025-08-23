@@ -2,29 +2,27 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   Edit,
-  Trash2,
-  Eye,
   Upload,
-  EyeOff,
-  RefreshCw,
   Plus,
-  Check,
   Lock,
   Filter,
-  EyeIcon,
   TextSearch,
+  Unlock,
+  Copy,
+  Check,
+  Mail,
+  QrCode,
+  Share,
 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuCheckboxItem,
   DropdownMenuSeparator,
@@ -41,15 +39,13 @@ import {
 import {
   getUserForms as getForms,
   updateForm as updateFormApi,
-  deleteForm as deleteFormApi,
-  getFormResponses,
 } from "@/features/form";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { toReadableLabel } from "@/lib/helpers";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
-
+import { QRCodeCanvas } from "qrcode.react";
 import { fmtDate } from "@/lib/helpers";
 
 const Dashboard = () => {
@@ -59,11 +55,16 @@ const Dashboard = () => {
   const [forms, setForms] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [confirmDelete, setConfirmDelete] = useState(null); // form to delete
-  const [confirmPublish, setConfirmPublish] = useState(null); // form to publish/unpublish
+  const [confirmPublish, setConfirmPublish] = useState(null);
+
+  // Sharing
+  const [copied, setCopied] = useState(false);
+  const [showQR, setShowQR] = useState(false);
+  const [email, setEmail] = useState("");
+  const [shareDialogOpen, setShareDialogOpen] = useState(null);
+  const [shareLink, setShareLink] = useState(null);
 
   const [doing, setDoing] = useState(false);
-  const [responsesPreview, setResponsesPreview] = useState(null); // {formId, responses}
 
   const navigate = useNavigate();
 
@@ -161,74 +162,7 @@ const Dashboard = () => {
   };
 
   const onViewResponses = async (form) => {
-    try {
-      const responses = await getFormResponses(form._id || form.id);
-      setResponsesPreview({ form, responses });
-    } catch (error) {
-      if (!error.isHandled) {
-        toast.error("Failed to load responses.");
-      }
-    }
-  };
-
-  const onDelete = async (form) => {
-    setConfirmDelete(form);
-  };
-
-  const confirmDeleteNow = async () => {
-    const form = confirmDelete;
-    if (!form) return;
-
-    setDoing(true);
-
-    const idToDelete = form._id || form.id;
-
-    // snapshot for rollback
-    const prevForms = forms;
-    const prevPage = currentPage;
-
-    // optimistic update first
-    const nextForms = forms.filter((x) => (x._id || x.id) !== idToDelete);
-    const nextTotalPages = getTotalPages(nextForms.length, formsPerPage);
-    const nextPage = Math.min(currentPage, nextTotalPages);
-
-    setForms(nextForms);
-    setCurrentPage(nextPage);
-
-    try {
-      await deleteFormApi(idToDelete);
-      toast.success("Form deleted");
-    } catch (error) {
-      setForms(prevForms);
-      setCurrentPage(prevPage);
-
-      if (!error.isHandled) {
-        toast.error("Failed to delete form.");
-      }
-    } finally {
-      setConfirmDelete(null);
-      setDoing(false);
-    }
-  };
-
-  const onToggleHide = async (form) => {
-    const id = form._id || form.id;
-    const prev = forms;
-    const updated = forms.map((f) =>
-      f._id === id ? { ...f, isPublic: !f.isPublic } : f
-    );
-    setForms(updated);
-    try {
-      await updateFormApi(id, { isPublic: !form.isPublic });
-      toast.success(
-        form.isPublic ? "Form is now public" : "Form is now private"
-      );
-    } catch (error) {
-      setForms(prev);
-      if (!error.isHandled) {
-        toast.error("Failed to toggle visibility.");
-      }
-    }
+    navigate(`/responses/${form._id}`, { state: { form: form } });
   };
 
   const onChangeState = (form) => {
@@ -247,6 +181,7 @@ const Dashboard = () => {
     const nextStateMap = {
       draft: "live",
       live: "closed",
+      closed: "live",
     };
     const nextState = nextStateMap[form.state] || "draft";
 
@@ -275,6 +210,27 @@ const Dashboard = () => {
     }
   };
 
+  const onShare = (form) => {
+    setShareLink(`${window.location.origin}/fill/${form.shareId}`);
+
+    setShareDialogOpen(form);
+  };
+
+  const handleCopyShareLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
+  const handleSendEmail = () => {
+    console.log("Send email invite to:", email, "with link:", shareLink);
+    setEmail("");
+  };
+
   const renderActionButtons = (form) => {
     return (
       <div className="flex gap-2">
@@ -300,7 +256,9 @@ const Dashboard = () => {
           <span className="font-light hidden md:inline">Edit</span>
         </Button>
 
-        {(form.state === "draft" || form.state === "live") && (
+        {(form.state === "draft" ||
+          form.state === "live" ||
+          form.state === "closed") && (
           <Button
             size="sm"
             variant="ghost"
@@ -308,31 +266,40 @@ const Dashboard = () => {
             title={
               form.state === "live"
                 ? `Close ${form.type}`
-                : `Publish ${form.type}`
+                : form.state === "draft"
+                ? `Publish ${form.type}`
+                : `Reopen ${form.type}`
             }
           >
             {form.state === "live" ? (
               <Lock className="w-4 h-4" />
-            ) : (
+            ) : form.state === "draft" ? (
               <Upload className="w-4 h-4" />
+            ) : (
+              <Unlock className="w-4 h-4" />
             )}
 
             <span className="font-light hidden md:inline">
-              {form.state === "live" ? "Close" : "Publish"}
+              {form.state === "live"
+                ? "Close"
+                : form.state === "draft"
+                ? "Publish"
+                : "Reopen"}
             </span>
           </Button>
         )}
 
-        <Button
-          size="sm"
-          variant="ghost"
-          className="text-red-500 hover:text-red-700"
-          onClick={() => onDelete(form)}
-          title="Delete"
-        >
-          <Trash2 className="w-4 h-4" />
-          <span className="font-light hidden md:inline">Delete</span>
-        </Button>
+        {form.state === "live" && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => onShare(form)}
+            title={`Share ${form.type}`}
+          >
+            <Share />
+            <span className="font-light hidden md:inline">Share</span>
+          </Button>
+        )}
       </div>
     );
   };
@@ -484,34 +451,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Delete confirmation */}
-      <Dialog
-        open={!!confirmDelete}
-        onOpenChange={() => setConfirmDelete(null)}
-      >
-        <DialogContent>
-          <h3 className="text-lg font-semibold">
-            Delete {confirmDelete?.type}
-          </h3>
-          <p className="text-sm text-muted-foreground mt-2">
-            Are you sure you want to permanently delete "{confirmDelete?.title}
-            "? This action cannot be undone.
-          </p>
-          <div className="mt-4 flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setConfirmDelete(null)}>
-              Cancel
-            </Button>
-            <Button
-              className="bg-red-600 text-white"
-              onClick={confirmDeleteNow}
-              disabled={doing}
-            >
-              {doing ? "Deleting..." : "Delete"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Change state confirmation */}
       <Dialog
         open={!!confirmPublish}
@@ -537,7 +476,7 @@ const Dashboard = () => {
               {doing
                 ? "Working..."
                 : `Change to ${
-                    { draft: "Live", live: "Closed", closed: "Draft" }[
+                    { draft: "Live", live: "Closed", closed: "Live" }[
                       confirmPublish?.state
                     ]
                   }`}
@@ -546,39 +485,72 @@ const Dashboard = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Responses preview dialog */}
+      {/* Share dialog */}
       <Dialog
-        open={!!responsesPreview}
-        onOpenChange={() => setResponsesPreview(null)}
+        open={!!shareDialogOpen}
+        onOpenChange={() => setShareDialogOpen(null)}
       >
-        <DialogContent className="max-w-3xl">
-          <h3 className="text-lg font-semibold">
-            Responses - {responsesPreview?.form?.title}
-          </h3>
-          <div className="mt-4">
-            {!responsesPreview ? null : responsesPreview.responses.length ===
-              0 ? (
-              <div className="text-muted-foreground">No responses yet.</div>
-            ) : (
-              <div className="space-y-3 max-h-[60vh] overflow-auto">
-                {responsesPreview.responses.map((r, i) => (
-                  <Card key={r._id || i} className="p-3">
-                    <div className="text-sm text-muted-foreground">
-                      Response #{i + 1}
-                    </div>
-                    <pre className="whitespace-pre-wrap text-sm mt-2">
-                      {JSON.stringify(r.answers || r, null, 2)}
-                    </pre>
-                  </Card>
-                ))}
-              </div>
-            )}
+        <DialogContent>
+          <div className="text-lg font-medium">Share</div>
+
+          <div className="flex justify-center my-4">
+            <QRCodeCanvas value={shareLink} size={200} />
           </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setResponsesPreview(null)}>
-              Close
+
+          {/* Copy Link Button */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={handleCopyShareLink}
+              className="relative w-full h-9 flex items-center justify-center gap-2 overflow-hidden"
+            >
+              {/* Copy State */}
+              <span
+                className={cn(
+                  "absolute inset-0 flex items-center justify-center gap-2 transition-all duration-300",
+                  copied
+                    ? "opacity-0 translate-y-2"
+                    : "opacity-100 translate-y-0"
+                )}
+              >
+                <Copy className="w-4 h-4" />
+                Copy share link
+              </span>
+
+              {/* Copied State */}
+              <span
+                className={cn(
+                  "absolute inset-0 flex items-center justify-center gap-2 transition-all duration-300",
+                  copied
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 translate-y-2"
+                )}
+              >
+                <Check className="w-4 h-4 text-green-500" />
+                Copied!
+              </span>
             </Button>
-          </DialogFooter>
+          </div>
+
+          {/* Email Invite */}
+          <div className="flex items-center gap-2">
+            <Input
+              type="email"
+              placeholder="Enter email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full h-9"
+            />
+            <Button
+              variant="outline"
+              onClick={handleSendEmail}
+              disabled={!email.trim()}
+              className="h-9"
+            >
+              <Mail className="w-4 h-4 mr-2" />
+              Send Invite
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </>
@@ -704,13 +676,6 @@ const SearchAndFilter = ({ onSearch, onFilterChange }) => {
           >
             Private
           </DropdownMenuCheckboxItem>
-          {/* <DropdownMenuCheckboxItem
-            checked={filters.privacy.includes("Invite-only")}
-            onCheckedChange={() => toggleFilter("privacy", "Invite-only")}
-            onSelect={(e) => e.preventDefault()}
-          >
-            Invite-only
-          </DropdownMenuCheckboxItem> */}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

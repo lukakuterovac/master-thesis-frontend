@@ -23,11 +23,13 @@ import {
   Save,
   Trash2,
   Plus,
-  Share,
-  Loader,
   Copy,
   Mail,
   QrCode,
+  Unlock,
+  Lock,
+  Upload,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/Sidebar";
@@ -340,10 +342,12 @@ const CreateForm = () => {
     setIsChangingState(true);
 
     try {
-      // Define the state cycle
-      const stateCycle = ["draft", "live", "closed"];
-      const currentIndex = stateCycle.indexOf(form.state);
-      const nextState = stateCycle[(currentIndex + 1) % stateCycle.length];
+      let nextState;
+      if (form.state === "draft") nextState = "live";
+      else if (form.state === "live") nextState = "closed";
+      else if (form.state === "closed") nextState = "live";
+
+      console.log("next state", nextState);
 
       const payload = {
         ...form,
@@ -357,17 +361,19 @@ const CreateForm = () => {
         await createForm(payload);
       }
 
+      // Map state to toast messages
+      const stateMessages = {
+        draft: "saved as draft",
+        live: "published",
+        closed: "closed",
+      };
+
       toast.success(
         `${toReadableLabel(form.type)} ${
-          nextState === "live"
-            ? "published"
-            : nextState === "closed"
-            ? "closed"
-            : "saved as draft"
+          stateMessages[nextState]
         } successfully!`
       );
 
-      // Update local form state
       setForm(payload);
     } catch (error) {
       if (!error.isHandled) {
@@ -402,14 +408,13 @@ const CreateForm = () => {
     setEmail("");
   };
 
-  if (loading) {
+  if (loading)
     return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader className="w-8 h-8 text-primary animate-spin" />
-        <div>Loading...</div>
+      <div className="h-screen flex flex-col justify-center items-center px-4">
+        <Loader2 className="animate-spin" size={32} />
+        <div className="text-center">Loading...</div>
       </div>
     );
-  }
 
   return (
     <>
@@ -737,25 +742,42 @@ const FormControlButtons = ({
   updateFormState,
   deleteForm,
 }) => {
+  // Determine if buttons should be disabled
   const buttonsDisabled = !form.type || isSaving || isChangingState;
 
-  const buttons = (
-    <>
+  // Determine the next action for state button
+  let stateButtonLabel = "";
+  let StateIcon = null;
+  if (form.state === "draft") {
+    stateButtonLabel = `Publish ${form.type ?? ""}`;
+    StateIcon = Upload;
+  } else if (form.state === "live") {
+    stateButtonLabel = `Close ${form.type ?? ""}`;
+    StateIcon = Lock;
+  } else if (form.state === "closed") {
+    stateButtonLabel = `Reopen ${form.type ?? ""}`;
+    StateIcon = Unlock;
+  }
+
+  return (
+    <div className="flex items-center gap-0 sm:gap-2">
+      {/* Save Button */}
       <Button
         variant="ghost"
         className="flex items-center justify-center gap-2 hover:text-blue-500"
-        disabled={buttonsDisabled || form.state === "closed"}
+        disabled={buttonsDisabled}
         onClick={saveForm}
         type="submit"
-        aria-label={`Save ${form.type ? form.type : ""}`}
+        aria-label={`Save ${form.type ?? ""}`}
       >
         <Save className="w-4 h-4" />
         <span className="hidden xs:inline">
-          {isSaving ? "Saving..." : `Save ${form.type ? form.type : ""}`}
+          {isSaving ? "Saving..." : `Save ${form.type ?? ""}`}
         </span>
         <span className="inline xs:hidden">{isSaving ? "Saving" : "Save"}</span>
       </Button>
 
+      {/* Update State Button */}
       <Button
         variant="ghost"
         className={cn(
@@ -764,62 +786,40 @@ const FormControlButtons = ({
             ? "hover:text-green-500"
             : form.state === "live"
             ? "hover:text-yellow-500"
-            : "cursor-not-allowed opacity-50"
+            : "hover:text-green-500" // Reopen uses green hover
         )}
-        disabled={buttonsDisabled || form.state === "closed"}
+        disabled={buttonsDisabled}
         onClick={updateFormState}
-        aria-label={`${
-          form.state === "draft"
-            ? "Publish"
-            : form.state === "live"
-            ? "Close"
-            : ""
-        } ${form.type ?? ""}`}
+        aria-label={stateButtonLabel}
       >
-        <Share className="w-4 h-4" />
-        <span className="hidden xs:inline">
-          {form.state === "draft"
-            ? isChangingState
-              ? "Publishing..."
-              : `Publish ${form.type ?? ""}`
-            : form.state === "live"
-            ? `Close ${form.type ?? ""}`
-            : "Closed"}
-        </span>
+        <StateIcon className="w-4 h-4" />
+        <span className="hidden xs:inline">{stateButtonLabel}</span>
         <span className="inline xs:hidden">
-          {form.state === "draft"
-            ? isChangingState
-              ? "Publishing"
-              : "Publish"
-            : form.state === "live"
-            ? `Close ${form.type ?? ""}`
-            : "Closed"}
+          {stateButtonLabel.split(" ")[0]}{" "}
+          {/* Only show "Publish"/"Close"/"Reopen" */}
         </span>
       </Button>
 
+      {/* Delete / Discard Button */}
       <Button
         variant="ghost"
         className="flex items-center justify-center gap-2 text-red-500 hover:text-red-900"
         disabled={buttonsDisabled}
         onClick={deleteForm}
         aria-label={
-          form._id
-            ? `Delete ${form.type ? form.type : ""}`
-            : `Discard ${form.type ? form.type : ""}`
+          form._id ? `Delete ${form.type ?? ""}` : `Discard ${form.type ?? ""}`
         }
       >
         <Trash2 className="w-4 h-4" />
         <span className="hidden xs:inline">
-          {form._id ? "Delete" : "Discard"} {form.type ? form.type : ""}
+          {form._id ? "Delete" : "Discard"} {form.type ?? ""}
         </span>
         <span className="inline xs:hidden">
           {form._id ? "Delete" : "Discard"}
         </span>
       </Button>
-    </>
+    </div>
   );
-
-  return <div className="flex items-center gap-0 sm:gap-2">{buttons}</div>;
 };
 
 const FormSettingsButton = ({ setSettingsSidebarOpen, className }) => (

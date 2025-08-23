@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { getFormByShareId, submitResponse } from "@/features/form";
@@ -11,14 +11,17 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { toReadableLabel } from "@/lib/helpers";
+import { capitalize, toReadableLabel } from "@/lib/helpers";
+import { Loader, Loader2 } from "lucide-react";
 
 export default function FillForm() {
   const { shareId } = useParams();
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(null);
   const [answers, setAnswers] = useState({});
+  const [filled, setFilled] = useState(false);
 
   const fetchForm = useCallback(async (shareId) => {
     setLoading(true);
@@ -73,6 +76,10 @@ export default function FillForm() {
       await submitResponse(form._id, { answers: formattedAnswers });
       toast.success("Form submitted successfully!");
       setAnswers({});
+      setFilled(true);
+      setTimeout(() => {
+        navigate("/explore");
+      }, 2500);
     } catch (error) {
       if (!error.isHandled) {
         toast.error("Failed to submit form.");
@@ -82,12 +89,47 @@ export default function FillForm() {
 
   if (loading)
     return (
-      <p className="text-center py-10 text-muted-foreground">Loading form...</p>
+      <div className="h-screen flex flex-col justify-center items-center px-4">
+        <Loader2 className="animate-spin" size={32} />
+        <div className="text-center">Loading...</div>
+      </div>
     );
+
   if (!form)
     return (
-      <p className="text-center py-10 text-muted-foreground">Form not found.</p>
+      <div className="h-screen flex flex-col justify-center items-center px-4">
+        <div className="inline-flex flex-col">
+          <div className="text-xl font-bold text-center">
+            {capitalize(form.type)} not found.
+          </div>
+        </div>
+      </div>
     );
+  if (form.state === "closed")
+    return (
+      <div className="h-screen flex flex-col justify-center items-center px-4">
+        <div className="inline-flex flex-col">
+          <div className="text-xl font-bold text-center">
+            {capitalize(form.type)} is closed.
+          </div>
+        </div>
+      </div>
+    );
+  if (filled) {
+    const message =
+      form.type === "quiz"
+        ? "Thank you for completing the quiz."
+        : `Thank you for filling in the ${form.type}.`;
+
+    return (
+      <div className="h-screen flex flex-col justify-center items-center px-4">
+        <div className="inline-flex flex-col">
+          <div className="text-xl font-bold text-center">{message}</div>
+          <div className="text-sm text-right italic mt-2"> - InForm</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <main className="max-w-4xl px-4 sm:px-8 mx-auto my-4 md:my-8 lg:my-12">
