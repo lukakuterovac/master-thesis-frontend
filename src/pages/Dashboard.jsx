@@ -47,6 +47,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { QRCodeCanvas } from "qrcode.react";
 import { fmtDate } from "@/lib/helpers";
+import SendEmail from "@/components/SendEmail";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -59,8 +60,6 @@ const Dashboard = () => {
 
   // Sharing
   const [copied, setCopied] = useState(false);
-  const [showQR, setShowQR] = useState(false);
-  const [email, setEmail] = useState("");
   const [shareDialogOpen, setShareDialogOpen] = useState(null);
   const [shareLink, setShareLink] = useState(null);
 
@@ -226,11 +225,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleSendEmail = () => {
-    console.log("Send email invite to:", email, "with link:", shareLink);
-    setEmail("");
-  };
-
   const renderActionButtons = (form) => {
     return (
       <div className="flex gap-2">
@@ -389,11 +383,15 @@ const Dashboard = () => {
 
                       <div className="text-sm text-muted-foreground mt-1 sm:mt-0 sm:ml-2 truncate">
                         <div>
-                          {f.questionCount ??
-                            (Array.isArray(f.questions)
-                              ? f.questions.length
-                              : 0)}{" "}
-                          question(s)
+                          {(() => {
+                            const count =
+                              f.questionCount ??
+                              (Array.isArray(f.questions)
+                                ? f.questions.length
+                                : 0);
+
+                            return `${count} question${count === 1 ? "" : "s"}`;
+                          })()}
                         </div>
                         <div>Created {fmtDate(f.createdAt)}</div>
                       </div>
@@ -532,25 +530,7 @@ const Dashboard = () => {
             </Button>
           </div>
 
-          {/* Email Invite */}
-          <div className="flex items-center gap-2">
-            <Input
-              type="email"
-              placeholder="Enter email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full h-9"
-            />
-            <Button
-              variant="outline"
-              onClick={handleSendEmail}
-              disabled={!email.trim()}
-              className="h-9"
-            >
-              <Mail className="w-4 h-4 mr-2" />
-              Send Invite
-            </Button>
-          </div>
+          <SendEmail form={shareDialogOpen} />
         </DialogContent>
       </Dialog>
     </>
@@ -582,7 +562,11 @@ const SearchAndFilter = ({ onSearch, onFilterChange }) => {
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-6">
-      <Button variant="outline" onClick={() => navigate("/create")}>
+      <Button
+        variant="outline"
+        onClick={() => navigate("/create")}
+        className="hover:border-purple-500 dark:hover:border-purple-500 hover:text-purple-500"
+      >
         <Plus />
         <span className="hidden xs:inline">Create</span>
       </Button>
@@ -596,13 +580,16 @@ const SearchAndFilter = ({ onSearch, onFilterChange }) => {
           setSearchTerm(e.target.value);
           onSearch?.(e.target.value);
         }}
-        className="sm:flex-1"
+        className="sm:flex-1 hover:border-purple-500 dark:hover:border-purple-500 focus-visible:border-purple-500 dark:focus-visible:border-purple-500"
       />
 
       {/* Filter dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline">
+          <Button
+            variant="outline"
+            className="hover:border-purple-500 dark:hover:border-purple-500 hover:text-purple-500"
+          >
             <Filter className="mr-2" />
             Filters
           </Button>

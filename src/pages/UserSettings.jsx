@@ -8,75 +8,43 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Input as BaseInput } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { Button as BaseButton } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+
+const Input = (props) => (
+  <BaseInput
+    className="focus-visible:border-purple-500 dark:focus-visible:border-purple-500"
+    {...props}
+  />
+);
+
+const Button = (props) => (
+  <BaseButton
+    className="w-full text-white bg-purple-500 hover:bg-purple-700"
+    {...props}
+  />
+);
 
 const UserSettings = () => {
   const { user, updateUser } = useAuth();
 
-  const [username, setUsername] = useState(user.username || "");
-  const [email, setEmail] = useState(user.email || "");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleUpdateUsername = async () => {
-    if (!username.trim()) return toast.error("Username is required");
-
+  const handleUpdate = async (url, data, successCallback) => {
     try {
       setLoading(true);
-      const res = await axios.post("/user/update-username", {
-        oldUsername: user.username,
-        newUsername: username.trim(),
-      });
+      const res = await axios.post(url, data);
       toast.success(res.data.message);
-      updateUser({ username: username.trim() });
+      successCallback?.();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Error updating username");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleUpdateEmail = async () => {
-    if (!email.trim()) return toast.error("Email is required");
-
-    try {
-      setLoading(true);
-      const res = await axios.post("/user/update-email", {
-        oldEmail: user.email,
-        newEmail: email.trim(),
-      });
-      toast.success(res.data.message);
-      updateUser({ email: email.trim() });
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Error updating email");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleUpdatePassword = async () => {
-    if (!oldPassword || !newPassword || !confirmPassword)
-      return toast.error("All password fields are required");
-    if (newPassword !== confirmPassword)
-      return toast.error("Passwords do not match");
-
-    try {
-      setLoading(true);
-      const res = await axios.post("/user/update-password", {
-        oldPassword,
-        newPassword,
-      });
-      toast.success(res.data.message);
-      setOldPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Error updating password");
+      toast.error(err.response?.data?.message || "Error updating");
     } finally {
       setLoading(false);
     }
@@ -93,7 +61,7 @@ const UserSettings = () => {
           <CardDescription>Update your username.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-1">
+          <div className="space-y-2">
             <Label htmlFor="username">New Username</Label>
             <Input
               id="username"
@@ -103,10 +71,19 @@ const UserSettings = () => {
             />
           </div>
           <Button
-            variant="outline"
-            onClick={handleUpdateUsername}
+            onClick={() =>
+              !username.trim()
+                ? toast.error("Username is required")
+                : handleUpdate(
+                    "/user/update-username",
+                    {
+                      oldUsername: user.username,
+                      newUsername: username.trim(),
+                    },
+                    () => updateUser({ username: username.trim() })
+                  )
+            }
             disabled={loading}
-            className={"w-full"}
           >
             Update Username
           </Button>
@@ -120,7 +97,7 @@ const UserSettings = () => {
           <CardDescription>Update your email address.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-1">
+          <div className="space-y-2">
             <Label htmlFor="email">New Email</Label>
             <Input
               id="email"
@@ -130,10 +107,16 @@ const UserSettings = () => {
             />
           </div>
           <Button
-            variant="outline"
-            onClick={handleUpdateEmail}
+            onClick={() =>
+              !email.trim()
+                ? toast.error("Email is required")
+                : handleUpdate(
+                    "/user/update-email",
+                    { oldEmail: user.email, newEmail: email.trim() },
+                    () => updateUser({ email: email.trim() })
+                  )
+            }
             disabled={loading}
-            className={"w-full"}
           >
             Update Email
           </Button>
@@ -147,7 +130,7 @@ const UserSettings = () => {
           <CardDescription>Update your password.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-1">
+          <div className="space-y-2">
             <Label htmlFor="oldPassword">Old Password</Label>
             <Input
               id="oldPassword"
@@ -156,7 +139,7 @@ const UserSettings = () => {
               onChange={(e) => setOldPassword(e.target.value)}
             />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-2">
             <Label htmlFor="newPassword">New Password</Label>
             <Input
               id="newPassword"
@@ -165,7 +148,7 @@ const UserSettings = () => {
               onChange={(e) => setNewPassword(e.target.value)}
             />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm New Password</Label>
             <Input
               id="confirmPassword"
@@ -175,10 +158,23 @@ const UserSettings = () => {
             />
           </div>
           <Button
-            variant="outline"
-            onClick={handleUpdatePassword}
+            onClick={() => {
+              if (!oldPassword || !newPassword || !confirmPassword)
+                return toast.error("All password fields are required");
+              if (newPassword !== confirmPassword)
+                return toast.error("Passwords do not match");
+
+              handleUpdate(
+                "/user/update-password",
+                { oldPassword, newPassword },
+                () => {
+                  setOldPassword("");
+                  setNewPassword("");
+                  setConfirmPassword("");
+                }
+              );
+            }}
             disabled={loading}
-            className={"w-full"}
           >
             Update Password
           </Button>

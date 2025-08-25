@@ -2,13 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Loader2,
-  ArrowRight,
-  Filter,
-  ArrowRightCircle,
-  PenLine,
-} from "lucide-react";
+import { Loader2, Filter, PenLine } from "lucide-react";
 import axios from "@/lib/axios";
 import { fmtDate } from "@/lib/helpers";
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +29,12 @@ const Explore = () => {
     const fetchForms = async () => {
       try {
         const res = await axios.get(`/form/public`);
-        setForms(res.data);
+
+        const sortedForms = res.data.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+
+        setForms(sortedForms);
       } catch (err) {
         console.error("Failed to fetch forms:", err);
       } finally {
@@ -56,7 +55,6 @@ const Explore = () => {
     });
   };
 
-  // Compute filtered forms
   const filteredForms = useMemo(() => {
     return forms.filter((f) => {
       const matchesSearch = searchTerm
@@ -96,13 +94,16 @@ const Explore = () => {
             placeholder="Search your forms, surveys and quizzes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="sm:flex-1"
+            className="sm:flex-1 hover:border-purple-500 focus-visible:border-purple-500  dark:focus-visible:border-purple-500"
           />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                <Filter className="mr-2" />
+              <Button
+                variant="outline"
+                className="transition-all duration-300 hover:border-purple-500 dark:hover:border-purple-500 hover:text-purple-500"
+              >
+                <Filter className="mr-2 group-hover:animate-pulse" />
                 Filters
               </Button>
             </DropdownMenuTrigger>
@@ -131,7 +132,7 @@ const Explore = () => {
             {filteredForms.map((f) => (
               <Card
                 key={f._id}
-                className="p-6 flex flex-col justify-between hover:border-purple-500"
+                className="group p-6 flex flex-col justify-between"
               >
                 <div className="flex flex-col gap-3">
                   <div
@@ -144,7 +145,7 @@ const Explore = () => {
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge
                       variant="outline"
-                      className="text-sm text-muted-foreground capitalize"
+                      className="text-sm text-muted-foreground capitalize transition-all group-hover:border-purple-500"
                     >
                       {f.type}
                     </Badge>
@@ -152,11 +153,13 @@ const Explore = () => {
 
                   <div className="text-sm text-muted-foreground mt-1 truncate">
                     <div>
-                      {f.questionCount ??
-                        (Array.isArray(f.questions)
-                          ? f.questions.length
-                          : 0)}{" "}
-                      question(s)
+                      {(() => {
+                        const count =
+                          f.questionCount ??
+                          (Array.isArray(f.questions) ? f.questions.length : 0);
+
+                        return `${count} question${count === 1 ? "" : "s"}`;
+                      })()}
                     </div>
                     <div>Created {fmtDate(f.createdAt)}</div>
                   </div>
@@ -165,9 +168,10 @@ const Explore = () => {
                 <Button
                   onClick={() => navigate(`/fill/${f.shareId}`)}
                   variant="outline"
-                  className="w-full flex items-center justify-center gap-2 hover:border-purple-500 hover:text-purple-500"
+                  className="w-full flex items-center justify-center gap-2 hover:border-purple-500 dark:hover:border-purple-500 hover:text-purple-500"
                 >
-                  Fill Form <PenLine className="w-4 h-4" />
+                  Fill Form
+                  <PenLine className="w-4 h-4 transform rotate-y-90 transition-transform duration-500 group-hover:rotate-y-0" />
                 </Button>
               </Card>
             ))}
