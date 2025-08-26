@@ -1,8 +1,6 @@
-import { useState } from "react";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -11,14 +9,15 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-const DatePicker = ({ form, updateDate, disabledDates }) => {
+const DatePicker = ({ htmlForId, form, updateDate, disabledDates }) => {
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button
+          id={htmlForId}
           variant="outline"
           data-empty={!form.expiresAt}
-          className="data-[empty=true]:text-muted-foreground justify-start text-left font-normal w-full"
+          className="data-[empty=true]:text-muted-foreground justify-start text-left font-normal w-full hover:border-purple-500  dark:hover:border-purple-500"
         >
           <CalendarIcon />
           {form.expiresAt ? (

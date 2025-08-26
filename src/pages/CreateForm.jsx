@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -47,6 +47,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { QRCodeCanvas } from "qrcode.react";
+import { sendEmail } from "@/features/email";
 
 const formTypes = [
   { value: "form", label: "Form" },
@@ -63,6 +64,7 @@ function reorderArray(array, fromIndex, toIndex) {
 
 const CreateForm = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { id } = useParams();
 
   const [form, setForm] = useState({
@@ -72,6 +74,8 @@ const CreateForm = () => {
     questions: [],
     state: "draft",
     isPublic: false,
+    isAnonymousQuiz: false,
+    showResults: false,
   });
   const [loading, setLoading] = useState(true);
 
@@ -129,6 +133,8 @@ const CreateForm = () => {
           questionText: "",
           choices: [],
           required: false,
+          correctAnswer: "",
+          points: 1,
         },
       ],
     }));
@@ -200,11 +206,15 @@ const CreateForm = () => {
     }
 
     form.questions.forEach((q, index) => {
+      if (!q.type) {
+        errors.push(`Question ${index + 1} has no type.`);
+      }
+
       if (!q.questionText || q.questionText.trim() === "") {
         errors.push(`Question ${index + 1} title is required.`);
       }
 
-      if (q.type === "single-choice" || q.type === "multiple-choice") {
+      if (q.type === "single-choice" || q.type === "multi-choice") {
         if (!Array.isArray(q.choices) || q.choices.length < 2) {
           errors.push(`Question ${index + 1} must have at least 2 choices.`);
         } else {
@@ -304,6 +314,7 @@ const CreateForm = () => {
         setIsSaving(true);
         await deleteForm(form._id);
         toast.success(`${toReadableLabel(form.type)} deleted successfully.`);
+        navigate("/dashboard");
       } catch (error) {
         if (!error.isHandled) {
           toast.error(`Failed to delete ${form.type}.`);
@@ -355,13 +366,17 @@ const CreateForm = () => {
         questions: form.questions.map(({ tempId, ...rest }) => rest),
       };
 
+      let updatedForm;
       if (form._id) {
-        await updateForm(form._id, payload);
+        updatedForm = await updateForm(form._id, payload);
       } else {
-        await createForm(payload);
+        updatedForm = await createForm(payload);
       }
 
-      // Map state to toast messages
+      setForm(updatedForm);
+
+      console.log("Form after creation/publish:", updatedForm);
+
       const stateMessages = {
         draft: "saved as draft",
         live: "published",
@@ -369,12 +384,10 @@ const CreateForm = () => {
       };
 
       toast.success(
-        `${toReadableLabel(form.type)} ${
-          stateMessages[nextState]
+        `${toReadableLabel(updatedForm.type)} ${
+          stateMessages[updatedForm.state]
         } successfully!`
       );
-
-      setForm(payload);
     } catch (error) {
       if (!error.isHandled) {
         toast.error("Failed to update form state.");
@@ -389,8 +402,15 @@ const CreateForm = () => {
   };
 
   const setExpirationDate = (date) => {
-    console.log("New date", date);
     setFormField("expiresAt", date);
+  };
+
+  const toggleIsAnonymousQuiz = () => {
+    setFormField("isAnonymousQuiz", !form.isAnonymousQuiz);
+  };
+
+  const toggleShowResults = () => {
+    setFormField("showResults", !form.showResults);
   };
 
   const handleCopyShareLink = async () => {
@@ -403,9 +423,20 @@ const CreateForm = () => {
     }
   };
 
-  const handleSendEmail = () => {
-    console.log("Send email invite to:", email, "with link:", shareLink);
-    setEmail("");
+  const handleSendEmail = async () => {
+    try {
+      await sendEmail({
+        email,
+        formType: form.type,
+        title: form.title,
+        description: form.description,
+        url: shareLink,
+      });
+    } catch {
+      console.log("Error while sending email.");
+    } finally {
+      setEmail("");
+    }
   };
 
   if (loading)
@@ -469,6 +500,7 @@ const CreateForm = () => {
                   placeholder={`Enter a title for your ${form.type}`}
                   required
                   disabled={isSaving}
+                  className="focus-visible:border-purple-500 dark:focus-visible:border-purple-500"
                 />
               </div>
 
@@ -480,6 +512,7 @@ const CreateForm = () => {
                   onChange={(e) => setFormField("description", e.target.value)}
                   placeholder="Brief description"
                   disabled={isSaving}
+                  className="focus-visible:border-purple-500 dark:focus-visible:border-purple-500"
                 />
               </div>
             </form>
@@ -491,12 +524,12 @@ const CreateForm = () => {
               <div className="text-lg font-semibold">Questions</div>
               <Button
                 variant="ghost"
-                className="flex items-center justify-center gap-2 hover:text-primary/90"
+                className="group flex items-center justify-center gap-2 hover:text-purple-500"
                 disabled={!form.type || isSaving || isChangingState}
                 onClick={addQuestion}
                 aria-label="Add question"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
                 <span className="hidden sm:inline">Add question</span>
               </Button>
             </div>
@@ -505,6 +538,7 @@ const CreateForm = () => {
               form.questions.map((q) => (
                 <QuestionCard
                   key={q._id || q.tempId}
+                  isQuiz={form.type === "quiz"}
                   question={q}
                   onChange={(updatedFields) =>
                     updateQuestion(q._id || q.tempId, updatedFields)
@@ -527,14 +561,18 @@ const CreateForm = () => {
         <div className="flex flex-col space-y-8">
           {/* General Section */}
           <div className="space-y-3">
-            <div className="text-sm font-medium">Visibility</div>
+            <Label htmlFor="is-public" className="text-sm font-medium">
+              Visibility
+            </Label>
             <div className="flex items-center gap-3">
               <Label
-                htmlFor="is-public"
                 className={cn(
                   form.isPublic ? "text-primary/50" : "",
                   "text-sm"
                 )}
+                onClick={() => {
+                  setFormField("isPublic", false);
+                }}
               >
                 Private
               </Label>
@@ -544,11 +582,13 @@ const CreateForm = () => {
                 onCheckedChange={toggleIsPublic}
               />
               <Label
-                htmlFor="is-public"
                 className={cn(
                   form.isPublic ? "" : "text-primary/50",
                   "text-sm"
                 )}
+                onClick={() => {
+                  setFormField("isPublic", true);
+                }}
               >
                 Public
               </Label>
@@ -557,9 +597,15 @@ const CreateForm = () => {
 
           {/* Expiration Date Section */}
           <div className="space-y-2">
-            <div className="text-sm font-medium">Expiration</div>
+            <Label
+              htmlFor="expiration-date"
+              className="text-sm font-medium w-fit"
+            >
+              Expiration
+            </Label>
             <div className="w-64">
               <DatePicker
+                htmlForId="expiration-date"
                 form={form}
                 updateDate={setExpirationDate}
                 disabledDates={(date) => {
@@ -576,7 +622,12 @@ const CreateForm = () => {
 
           {/* Response Limit Section */}
           <div className="space-y-2">
-            <div className="text-sm font-medium">Response Limit</div>
+            <Label
+              htmlFor="response-limit"
+              className="text-sm font-medium w-fit"
+            >
+              Response Limit
+            </Label>
             <div className="w-64">
               <Input
                 type="number"
@@ -591,6 +642,7 @@ const CreateForm = () => {
                       : "",
                   })
                 }
+                className="bg-white hover:bg-accent transition-colors no-spinner focus-visible:border-purple-500  dark:focus-visible:border-purple-500"
               />
             </div>
             <p className="text-xs text-muted-foreground">
@@ -598,6 +650,49 @@ const CreateForm = () => {
             </p>
           </div>
 
+          {/* Quiz settings */}
+          {form.type === "quiz" && (
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Quiz settings</div>
+
+              <>
+                <div className="flex items-center gap-3">
+                  <Label
+                    htmlFor="is-anonymous-quiz"
+                    className="text-sm font-medium"
+                  >
+                    Anonymous quiz
+                  </Label>
+                  <Switch
+                    id="is-anonymous-quiz"
+                    checked={form.isAnonymousQuiz}
+                    onCheckedChange={toggleIsAnonymousQuiz}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Anonymous quizzes do not take names of participants.
+                </p>
+              </>
+
+              <>
+                <div className="flex items-center gap-3">
+                  <Label htmlFor="show-results" className="text-sm font-medium">
+                    Show results
+                  </Label>
+                  <Switch
+                    id="show-results"
+                    checked={form.showResults}
+                    onCheckedChange={toggleShowResults}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  If enabled, results will be shown at the end of the quiz.
+                </p>
+              </>
+            </div>
+          )}
+
+          {/* Sharing */}
           {form.state === "live" && (
             <div className="space-y-3">
               <div className="text-sm font-medium">Share</div>
@@ -654,7 +749,7 @@ const CreateForm = () => {
                   placeholder="Enter email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full h-9"
+                  className="w-full h-9 focus-visible:border-purple-500 dark:focus-visible:border-purple-500"
                 />
                 <Button
                   variant="outline"
@@ -803,7 +898,7 @@ const FormControlButtons = ({
       {/* Delete / Discard Button */}
       <Button
         variant="ghost"
-        className="flex items-center justify-center gap-2 text-red-500 hover:text-red-900"
+        className="flex items-center justify-center gap-2 text-red-500 hover:bg-red-900 dark:hover:bg-red-900 hover:text-white transition-all duration-300"
         disabled={buttonsDisabled}
         onClick={deleteForm}
         aria-label={

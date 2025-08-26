@@ -12,6 +12,7 @@ import {
   Explore,
   Responses,
   UserSettings,
+  QuizLeaderboard,
 } from "@/pages";
 
 function AppRouter() {
@@ -20,12 +21,13 @@ function AppRouter() {
       {/* Routes without layout */}
       <Route path="/sign-in" element={<SignIn />} />
       <Route path="/sign-up" element={<SignUp />} />
-      <Route path="/fill/:shareId" element={<FillForm />} />
 
       {/* Routes with layout */}
       <Route element={<Layout />}>
         {/* Public route */}
         <Route path="/" element={<Home />} />
+        <Route path="/fill/:shareId" element={<FillForm />} />
+        <Route path="/quiz-results/:id" element={<QuizLeaderboard />} />
         <Route path="/explore" element={<Explore />} />
 
         {/* Protected routes */}

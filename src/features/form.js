@@ -40,3 +40,9 @@ export const submitResponse = async (formId, answers) => {
   const res = await axios.post(`/form/${formId}/responses`, answers);
   return res.data;
 };
+
+// Quiz results
+export const getQuizResults = async (formId) => {
+  const res = await axios.get(`/form/${formId}/quiz-results/`);
+  return res.data;
+};

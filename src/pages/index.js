@@ -7,3 +7,4 @@ export { default as FillForm } from "./FillForm";
 export { default as Explore } from "./Explore";
 export { default as Responses } from "./Responses";
 export { default as UserSettings } from "./UserSettings";
+export { default as QuizLeaderboard } from "./QuizLeaderboard";

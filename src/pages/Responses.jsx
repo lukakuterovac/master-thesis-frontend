@@ -9,18 +9,16 @@ import {
   FormResponses,
   SurveyAnalytics,
 } from "@/components/ResponseComponents";
+import QuizResults from "@/components/QuizResults";
 
 const ResponsesPage = () => {
   const { id } = useParams();
   const location = useLocation();
 
-  const { theme } = useTheme();
-
   const [form, setForm] = useState(location.state?.form || null);
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // If form not passed in state, fetch it
   useEffect(() => {
     const fetchForm = async () => {
       if (!form) {
@@ -35,7 +33,6 @@ const ResponsesPage = () => {
     fetchForm();
   }, [id, form]);
 
-  // Always fetch responses
   useEffect(() => {
     const fetchResponses = async () => {
       try {
@@ -63,11 +60,13 @@ const ResponsesPage = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <div className="text-2xl font-bold">{form.title}</div>
-      <p className={cn(theme === "dark" ? "text-gray-400" : "text-gray-600")}>
-        {responses.length} responses collected
-      </p>
+    <div className="max-w-5xl mx-auto">
+      <div className="flex flex-col space-y-2 mb-4">
+        <div className="text-2xl font-bold">{form.title}</div>
+        <p className="text-gray-600 dark:text-gray-400 ">
+          {responses.length} responses collected
+        </p>
+      </div>
 
       {/* Render based on form type */}
       {form.type === "form" && (
@@ -75,6 +74,9 @@ const ResponsesPage = () => {
       )}
       {form.type === "survey" && (
         <SurveyAnalytics form={form} responses={responses} />
+      )}
+      {form.type === "quiz" && (
+        <QuizResults form={form} responses={responses} />
       )}
     </div>
   );

@@ -29,6 +29,7 @@ const questionTypes = [
 ];
 
 export const QuestionCard = ({
+  isQuiz,
   question,
   onChange,
   onMoveUp,
@@ -158,7 +159,7 @@ export const QuestionCard = ({
                   onChange({ ...question, choices: updatedChoices });
                 }}
                 placeholder={`Choice ${index + 1}`}
-                className="flex-1"
+                className="flex-1 focus-visible:border-purple-500 dark:focus-visible:border-purple-500"
               />
 
               {/* Move Up */}
@@ -236,23 +237,139 @@ export const QuestionCard = ({
           placeholder="Enter your question"
           value={question.questionText || ""}
           onChange={handleTitleChange}
-          className="flex-1"
+          className="flex-1 focus-visible:border-purple-500 dark:focus-visible:border-purple-500"
         />
       </div>
 
       {renderAdditionalContent()}
 
-      <Label
-        htmlFor={`required-${question._id || question.tempId}`}
-        className="ml-auto text-sm w-max font-medium cursor-pointer border rounded-md px-4 py-2"
-      >
-        <Checkbox
-          id={`required-${question._id || question.tempId}`}
-          checked={question.required}
-          onCheckedChange={handleRequiredChange}
-        />
-        Required
-      </Label>
+      {!isQuiz && (
+        <Label
+          htmlFor={`required-${question._id || question.tempId}`}
+          className="ml-auto text-sm w-max font-medium cursor-pointer border rounded-md px-4 py-2"
+        >
+          <Checkbox
+            id={`required-${question._id || question.tempId}`}
+            checked={question.required}
+            onCheckedChange={handleRequiredChange}
+          />
+          Required
+        </Label>
+      )}
+
+      {isQuiz && (
+        <div className="space-y-2 mt-4 p-2">
+          <Label htmlFor={`answer-${question._id || question.tempId}`}>
+            Question answer
+          </Label>
+
+          {/* Short & Long text */}
+          {["short-text", "long-text"].includes(question.type) && (
+            <Input
+              id={`answer-${question._id || question.tempId}`}
+              placeholder="Enter answer"
+              value={question.correctAnswer?.[0] || ""}
+              onChange={(e) =>
+                onChange({ ...question, correctAnswer: [e.target.value] })
+              }
+              className="flex-1 focus-visible:border-purple-500 dark:focus-visible:border-purple-500"
+            />
+          )}
+
+          {/* Single choice */}
+          {["single-choice"].includes(question.type) && (
+            <div className="flex flex-col gap-2">
+              {(question.choices || []).map((choice, index) => (
+                <Label
+                  key={index}
+                  htmlFor={`answer-${
+                    question._id || question.tempId
+                  }-choice-${index}`}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <input
+                    type="radio"
+                    id={`answer-${
+                      question._id || question.tempId
+                    }-choice-${index}`}
+                    name={`answer-${question._id || question.tempId}`}
+                    value={choice}
+                    checked={question.correctAnswer?.[0] === choice}
+                    onChange={(e) =>
+                      onChange({
+                        ...question,
+                        correctAnswer: [e.target.value],
+                      })
+                    }
+                    className="accent-purple-500"
+                  />
+                  {choice || `Choice ${index + 1}`}
+                </Label>
+              ))}
+            </div>
+          )}
+
+          {/* Multi choice */}
+          {["multi-choice"].includes(question.type) && (
+            <div className="flex flex-col gap-2">
+              {(question.choices || []).map((choice, index) => (
+                <Label
+                  key={index}
+                  htmlFor={`answer-${
+                    question._id || question.tempId
+                  }-choice-${index}`}
+                  className="flex items-center gap-2 cursor-pointer "
+                >
+                  <input
+                    type="checkbox"
+                    id={`answer-${
+                      question._id || question.tempId
+                    }-choice-${index}`}
+                    value={choice}
+                    checked={question.correctAnswer?.includes(choice) || false}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      const prevAnswers = question.correctAnswer || [];
+                      const updatedAnswers = checked
+                        ? [...prevAnswers, choice]
+                        : prevAnswers.filter((a) => a !== choice);
+                      onChange({
+                        ...question,
+                        correctAnswer: updatedAnswers,
+                      });
+                    }}
+                    className="accent-purple-500"
+                  />
+                  {choice || `Choice ${index + 1}`}
+                </Label>
+              ))}
+            </div>
+          )}
+
+          {/* Points */}
+          <div className="flex items-center gap-2 w-fit mt-2">
+            <Label
+              htmlFor={`points-${question._id || question.tempId}`}
+              className="whitespace-nowrap"
+            >
+              Points
+            </Label>
+            <Input
+              id={`points-${question._id || question.tempId}`}
+              type="number"
+              min={0}
+              value={question.points ?? ""}
+              onChange={(e) =>
+                onChange({
+                  ...question,
+                  points: Number(e.target.value) || 0,
+                })
+              }
+              className="w-24 focus-visible:border-purple-500 dark:focus-visible:border-purple-500 no-spinner"
+            />
+          </div>
+        </div>
+      )}
     </Card>
   );
 };
