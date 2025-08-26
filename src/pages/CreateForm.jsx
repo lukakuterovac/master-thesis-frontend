@@ -48,11 +48,12 @@ import {
 } from "@/components/ui/dialog";
 import { QRCodeCanvas } from "qrcode.react";
 import { sendEmail } from "@/features/email";
+import LoadingScreen from "@/components/LoadingScreen";
 
 const formTypes = [
   { value: "form", label: "Form" },
-  { value: "quiz", label: "Quiz" },
   { value: "survey", label: "Survey" },
+  { value: "quiz", label: "Quiz" },
 ];
 
 function reorderArray(array, fromIndex, toIndex) {
@@ -61,6 +62,8 @@ function reorderArray(array, fromIndex, toIndex) {
   result.splice(toIndex, 0, removed);
   return result;
 }
+
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 const CreateForm = () => {
   const location = useLocation();
@@ -86,6 +89,9 @@ const CreateForm = () => {
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [email, setEmail] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
 
   const shareLink = `${window.location.origin}/fill/${form.shareId}`;
 
@@ -424,7 +430,16 @@ const CreateForm = () => {
   };
 
   const handleSendEmail = async () => {
+    if (!isValidEmail(email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
     try {
+      setSending(true);
+      setSent(false);
+      setError("");
+
       await sendEmail({
         email,
         formType: form.type,
@@ -432,24 +447,23 @@ const CreateForm = () => {
         description: form.description,
         url: shareLink,
       });
-    } catch {
-      console.log("Error while sending email.");
+
+      setSent(true);
+      setTimeout(() => setSent(false), 2000);
+    } catch (err) {
+      console.error("Error while sending email:", err);
+      setError("Failed to send email. Please try again.");
     } finally {
+      setSending(false);
       setEmail("");
     }
   };
 
-  if (loading)
-    return (
-      <div className="h-screen flex flex-col justify-center items-center px-4">
-        <Loader2 className="animate-spin" size={32} />
-        <div className="text-center">Loading...</div>
-      </div>
-    );
+  if (loading) return <LoadingScreen />;
 
   return (
     <>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="w-full max-w-5xl mx-auto space-y-6">
         {/* Top Controls */}
         <Card className="p-2 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <div className="flex items-center justify-between md:justify-start gap-2">
@@ -743,24 +757,62 @@ const CreateForm = () => {
               </div>
 
               {/* Email Invite */}
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col w-full gap-2 sm:flex-row sm:items-center">
                 <Input
                   type="email"
                   placeholder="Enter email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full h-9 focus-visible:border-purple-500 dark:focus-visible:border-purple-500"
+                  className="w-full sm:max-w-[300px] h-9 focus-visible:border-purple-500 dark:focus-visible:border-purple-500"
                 />
+
                 <Button
                   variant="outline"
                   onClick={handleSendEmail}
-                  disabled={!email.trim()}
-                  className="h-9"
+                  disabled={sending || !email.trim()}
+                  className="relative h-9 w-full sm:w-[140px] flex items-center justify-center gap-2 overflow-hidden"
                 >
-                  <Mail className="w-4 h-4 mr-2" />
-                  Send Invite
+                  {/* Default State */}
+                  <span
+                    className={cn(
+                      "absolute inset-0 flex items-center justify-center gap-2 transition-all duration-300",
+                      !sending && !sent
+                        ? "opacity-100 translate-y-0"
+                        : "opacity-0 translate-y-2"
+                    )}
+                  >
+                    <Mail className="w-4 h-4" />
+                    Send Invite
+                  </span>
+
+                  {/* Sending State */}
+                  <span
+                    className={cn(
+                      "absolute inset-0 flex items-center justify-center gap-2 transition-all duration-300",
+                      sending
+                        ? "opacity-100 translate-y-0"
+                        : "opacity-0 translate-y-2"
+                    )}
+                  >
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Sending...
+                  </span>
+
+                  {/* Sent State */}
+                  <span
+                    className={cn(
+                      "absolute inset-0 flex items-center justify-center gap-2 transition-all duration-300",
+                      sent
+                        ? "opacity-100 translate-y-0"
+                        : "opacity-0 translate-y-2"
+                    )}
+                  >
+                    <Check className="w-4 h-4 text-green-500" />
+                    Sent!
+                  </span>
                 </Button>
               </div>
+              {error && <p className="text-sm text-red-500">{error}</p>}
             </div>
           )}
         </div>

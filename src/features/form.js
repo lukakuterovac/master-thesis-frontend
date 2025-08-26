@@ -16,6 +16,11 @@ export const getFormByShareId = async (shareId) => {
   return res.data;
 };
 
+export const getFormById = async (id) => {
+  const res = await axios.get(`/form/id/${id}`);
+  return res.data;
+};
+
 export const createForm = async (form) => {
   const res = await axios.post("/form", form);
   return res.data;
@@ -32,8 +37,9 @@ export const deleteForm = async (id) => {
 };
 
 // Responses
-export const getFormResponses = async () => {
-  console.log("getFormResponses not implemented.");
+export const getFormResponses = async (id) => {
+  const res = await axios.get(`/form/${id}/responses`);
+  return res.data;
 };
 
 export const submitResponse = async (formId, answers) => {

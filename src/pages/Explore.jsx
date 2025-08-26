@@ -14,6 +14,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
+import LoadingScreen from "@/components/LoadingScreen";
 
 const Explore = () => {
   const navigate = useNavigate();
@@ -68,116 +69,108 @@ const Explore = () => {
     });
   }, [forms, searchTerm, filters.type]);
 
-  if (loading)
-    return (
-      <div className="h-screen flex flex-col justify-center items-center px-4">
-        <Loader2 className="animate-spin" size={32} />
-        <div className="text-center">Loading...</div>
-      </div>
-    );
+  if (loading) return <LoadingScreen />;
 
   return (
-    <div className="flex justify-center px-4">
-      <div className="w-full max-w-3xl">
-        <div className="text-4xl md:text-6xl font-bold mb-3 md:mb-4">
-          Explore page
-        </div>
-        <div className="text-lg md:text-xl mb-4 text-gray-500">
-          Browse through public forms, surveys and quizzes created on InForm and
-          fill them out to help the creators gather the data they need.
-        </div>
+    <div className="w-full max-w-5xl mx-auto">
+      <div className="text-4xl md:text-6xl font-bold mb-3 md:mb-4">
+        Explore page
+      </div>
+      <div className="text-lg md:text-xl mb-4 text-gray-500">
+        Browse through public forms, surveys and quizzes created on InForm and
+        fill them out to help the creators gather the data they need.
+      </div>
 
-        {/* Search & Filter */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-6">
-          <Input
-            type="text"
-            placeholder="Search your forms, surveys and quizzes..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="sm:flex-1 hover:border-purple-500 focus-visible:border-purple-500  dark:focus-visible:border-purple-500"
-          />
+      {/* Search & Filter */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-6">
+        <Input
+          type="text"
+          placeholder="Search your forms, surveys and quizzes..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="sm:flex-1 hover:border-purple-500 focus-visible:border-purple-500  dark:focus-visible:border-purple-500"
+        />
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="transition-all duration-300 hover:border-purple-500 dark:hover:border-purple-500 hover:text-purple-500"
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              className="transition-all duration-300 hover:border-purple-500 dark:hover:border-purple-500 hover:text-purple-500"
+            >
+              <Filter className="mr-2 group-hover:animate-pulse" />
+              Filters
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-48">
+            <DropdownMenuLabel>Form Type</DropdownMenuLabel>
+            {["form", "survey", "quiz"].map((type) => (
+              <DropdownMenuCheckboxItem
+                key={type}
+                checked={filters.type.includes(type)}
+                onCheckedChange={() => toggleFilter("type", type)}
+                onSelect={(e) => e.preventDefault()}
               >
-                <Filter className="mr-2 group-hover:animate-pulse" />
-                Filters
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48">
-              <DropdownMenuLabel>Form Type</DropdownMenuLabel>
-              {["form", "survey", "quiz"].map((type) => (
-                <DropdownMenuCheckboxItem
-                  key={type}
-                  checked={filters.type.includes(type)}
-                  onCheckedChange={() => toggleFilter("type", type)}
-                  onSelect={(e) => e.preventDefault()}
+                {type.charAt(0).toUpperCase() + type.slice(1)}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {filteredForms.length === 0 ? (
+        <p className="text-muted-foreground text-center">
+          No public forms match your search or filter.
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 gap-3">
+          {filteredForms.map((f) => (
+            <Card
+              key={f._id}
+              className="group p-6 flex flex-col justify-between"
+            >
+              <div className="flex flex-col gap-3">
+                <div
+                  className="text-lg font-semibold line-clamp-2"
+                  title={f.title || "(untitled)"}
                 >
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        {filteredForms.length === 0 ? (
-          <p className="text-muted-foreground text-center">
-            No public forms match your search or filter.
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 gap-3">
-            {filteredForms.map((f) => (
-              <Card
-                key={f._id}
-                className="group p-6 flex flex-col justify-between"
-              >
-                <div className="flex flex-col gap-3">
-                  <div
-                    className="text-lg font-semibold line-clamp-2"
-                    title={f.title || "(untitled)"}
-                  >
-                    {f.title || "(untitled)"}
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge
-                      variant="outline"
-                      className="text-sm text-muted-foreground capitalize transition-all group-hover:border-purple-500"
-                    >
-                      {f.type}
-                    </Badge>
-                  </div>
-
-                  <div className="text-sm text-muted-foreground mt-1 truncate">
-                    <div>
-                      {(() => {
-                        const count =
-                          f.questionCount ??
-                          (Array.isArray(f.questions) ? f.questions.length : 0);
-
-                        return `${count} question${count === 1 ? "" : "s"}`;
-                      })()}
-                    </div>
-                    <div>Created {fmtDate(f.createdAt)}</div>
-                  </div>
+                  {f.title || "(untitled)"}
                 </div>
 
-                <Button
-                  onClick={() => navigate(`/fill/${f.shareId}`)}
-                  variant="outline"
-                  className="w-full flex items-center justify-center gap-2 hover:border-purple-500 dark:hover:border-purple-500 hover:text-purple-500"
-                >
-                  Fill Form
-                  <PenLine className="w-4 h-4 transform rotate-y-90 transition-transform duration-500 group-hover:rotate-y-0" />
-                </Button>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge
+                    variant="outline"
+                    className="text-sm text-muted-foreground capitalize transition-all group-hover:border-purple-500"
+                  >
+                    {f.type}
+                  </Badge>
+                </div>
+
+                <div className="text-sm text-muted-foreground mt-1 truncate">
+                  <div>
+                    {(() => {
+                      const count =
+                        f.questionCount ??
+                        (Array.isArray(f.questions) ? f.questions.length : 0);
+
+                      return `${count} question${count === 1 ? "" : "s"}`;
+                    })()}
+                  </div>
+                  <div>Created {fmtDate(f.createdAt)}</div>
+                </div>
+              </div>
+
+              <Button
+                onClick={() => navigate(`/fill/${f.shareId}`)}
+                variant="outline"
+                className="w-full flex items-center justify-center gap-2 hover:border-purple-500 dark:hover:border-purple-500 hover:text-purple-500"
+              >
+                Fill Form
+                <PenLine className="w-4 h-4 transform rotate-y-90 transition-transform duration-500 group-hover:rotate-y-0" />
+              </Button>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

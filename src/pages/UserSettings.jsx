@@ -51,7 +51,7 @@ const UserSettings = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto py-10 space-y-6">
+    <div className="w-full lg:w-7/10 max-w-5xl mx-auto flex flex-col space-y-6 justify-center">
       <h1 className="text-2xl font-bold">User Settings</h1>
 
       {/* Username Card */}

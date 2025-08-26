@@ -2,14 +2,13 @@ import { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import axios from "@/lib/axios";
 import { Loader2 } from "lucide-react";
-
-import { cn } from "@/lib/utils";
-import { useTheme } from "@/contexts/ThemeContext";
 import {
   FormResponses,
   SurveyAnalytics,
 } from "@/components/ResponseComponents";
 import QuizResults from "@/components/QuizResults";
+import { getFormById, getFormResponses, getQuizResults } from "@/features/form";
+import LoadingScreen from "@/components/LoadingScreen";
 
 const ResponsesPage = () => {
   const { id } = useParams();
@@ -17,13 +16,14 @@ const ResponsesPage = () => {
 
   const [form, setForm] = useState(location.state?.form || null);
   const [responses, setResponses] = useState([]);
+  const [quizResults, setQuizResults] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchForm = async () => {
       if (!form) {
         try {
-          const { data } = await axios.get(`/form/${id}`);
+          const data = await getFormById(id);
           setForm(data);
         } catch (err) {
           console.error("Error fetching form:", err);
@@ -36,7 +36,7 @@ const ResponsesPage = () => {
   useEffect(() => {
     const fetchResponses = async () => {
       try {
-        const { data } = await axios.get(`/form/${id}/responses`);
+        const data = await getFormResponses(id);
         setResponses(data);
       } catch (err) {
         console.error("Error fetching responses:", err);
@@ -47,20 +47,28 @@ const ResponsesPage = () => {
     fetchResponses();
   }, [id]);
 
-  if (loading)
-    return (
-      <div className="h-screen flex flex-col justify-center items-center px-4">
-        <Loader2 className="animate-spin" size={32} />
-        <div className="text-center">Loading...</div>
-      </div>
-    );
+  useEffect(() => {
+    const fetchResponses = async () => {
+      try {
+        const data = await getQuizResults(id);
+        setQuizResults(data);
+      } catch (err) {
+        console.error("Error fetching responses:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchResponses();
+  }, [id]);
+
+  if (loading) return <LoadingScreen />;
 
   if (!form) {
     return <div className="text-center text-gray-500">Form not found</div>;
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="w-full lg:w-7/10 mx-auto flex flex-col max-w-5xl">
       <div className="flex flex-col space-y-2 mb-4">
         <div className="text-2xl font-bold">{form.title}</div>
         <p className="text-gray-600 dark:text-gray-400 ">

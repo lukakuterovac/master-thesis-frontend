@@ -12,7 +12,7 @@ import { Link } from "react-router-dom";
 
 const Home = () => {
   return (
-    <div className="max-w-5xl mx-auto px-4">
+    <div className="w-full max-w-5xl mx-auto">
       {/* Hero Section */}
       <div className="mb-16">
         <div className="text-md md:text-lg">Welcome to</div>

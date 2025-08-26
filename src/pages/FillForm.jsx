@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { toReadableLabel } from "@/lib/helpers";
 import { Loader2, Sparkles, Trophy } from "lucide-react";
+import LoadingScreen from "@/components/LoadingScreen";
 
 const FillForm = () => {
   const { shareId } = useParams();
@@ -84,7 +85,7 @@ const FillForm = () => {
     }
   };
 
-  if (loading) return <FormStateMessage message="Loading..." loading />;
+  if (loading) return <LoadingScreen />;
 
   if (!form) return <FormStateMessage message="Form not found." />;
   if (form.state === "closed")
@@ -92,7 +93,7 @@ const FillForm = () => {
   if (filled) return <FormFilledMessage form={form} />;
 
   return (
-    <main className="max-w-4xl px-4 sm:px-8 mx-auto">
+    <div className="w-full max-w-5xl mx-auto">
       <div className="flex flex-col gap-6">
         <Card className="p-6 gap-2">
           <div className="text-2xl font-bold flex justify-between">
@@ -142,7 +143,7 @@ const FillForm = () => {
           </Button>
         </form>
       </div>
-    </main>
+    </div>
   );
 };
 
@@ -162,10 +163,10 @@ const FormFilledMessage = ({ form }) => {
       : `Thank you for filling in the ${form.type}.`;
 
   return (
-    <div className="h-screen flex flex-col justify-center items-center px-4">
+    <div className="flex flex-col flex-1 items-center justify-center">
       <div className="inline-flex flex-col text-center space-y-2">
-        <div className="text-xl font-bold">{message}</div>
-        <div className="text-sm italic mt-2"> - InForm</div>
+        <div className="text-lg md:text-xl font-bold">{message}</div>
+        <div className="text-sm italic"> - InForm</div>
 
         {form.type === "quiz" && form.showResults && (
           <Link to={`/quiz-results/${form._id}`} className="group">
@@ -271,7 +272,7 @@ const QuestionCard = ({ question, value, onChange }) => {
               {question.questionText}
             </Label>
             {question.required && (
-              <Badge className="bg-red-500 text-white max-h-max">
+              <Badge className="ml-2 bg-red-500 text-white max-h-max">
                 Required
               </Badge>
             )}

@@ -52,7 +52,7 @@ const SendEmail = ({ form }) => {
 
   return (
     <div className="flex flex-col gap-2 w-full">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col w-full gap-2 sm:flex-row sm:items-center">
         <Input
           type="email"
           placeholder="Enter email"
@@ -67,7 +67,7 @@ const SendEmail = ({ form }) => {
           variant="outline"
           onClick={handleSendEmail}
           disabled={sending}
-          className="relative h-9 w-[140px] flex items-center justify-center gap-2 overflow-hidden"
+          className="relative h-9 w-full sm:w-[140px] flex items-center justify-center gap-2 overflow-hidden"
         >
           {/* Default State */}
           <span

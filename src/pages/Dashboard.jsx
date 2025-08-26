@@ -297,149 +297,139 @@ const Dashboard = () => {
   };
 
   return (
-    <>
-      <div className="flex justify-center px-4">
-        <div className="w-full max-w-3xl">
-          <div className="text-4xl md:text-6xl font-bold mb-6 md:mb-12 truncate">
-            {user.username}
+    <div className="w-full max-w-5xl mx-auto">
+      <div className="text-4xl md:text-6xl font-bold mb-6 md:mb-12 truncate">
+        {user.username}
+      </div>
+      <div className="text-2xl md:text-3xl font-bold  mb-3 dark:text-gray-400 text-gray-600">
+        Dashboard
+      </div>
+
+      <SearchAndFilter
+        onSearch={handleSearch}
+        onFilterChange={handleFilterChange}
+      />
+
+      <div className="flex-col space-y-3 grow-0">
+        {loading ? (
+          <div className="text-muted-foreground text-center">Loading...</div>
+        ) : filteredForms.length === 0 ? (
+          <div className="text-muted-foreground text-center">
+            {searchQuery || Object.values(filters).some((arr) => arr.length > 0)
+              ? "No forms found."
+              : "No forms yet."}
           </div>
-          <div className="text-2xl md:text-3xl font-bold  mb-3 dark:text-gray-400 text-gray-600">
-            Dashboard
-          </div>
-
-          <SearchAndFilter
-            onSearch={handleSearch}
-            onFilterChange={handleFilterChange}
-          />
-
-          <div className="flex-col space-y-3 grow-0">
-            {loading ? (
-              <div className="text-muted-foreground text-center">
-                Loading...
-              </div>
-            ) : filteredForms.length === 0 ? (
-              <div className="text-muted-foreground text-center">
-                {searchQuery ||
-                Object.values(filters).some((arr) => arr.length > 0)
-                  ? "No forms found."
-                  : "No forms yet."}
-              </div>
-            ) : (
-              currentForms.map((f) => (
-                <Card
-                  key={f._id}
-                  className="p-6 hover:border-purple-500 transition-all duration-300"
-                >
-                  <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-3 sm:gap-0">
-                    {/* Left section */}
-                    <div className="flex flex-col sm:gap-3">
-                      <div
-                        className="text-lg font-semibold line-clamp-2"
-                        title={f.title || "(untitled)"}
-                      >
-                        {f.title || "(untitled)"}
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2 mt-1 sm:mt-0">
-                        <Badge
-                          variant="outline"
-                          className="text-sm text-muted-foreground capitalize"
-                        >
-                          {f.type}
-                        </Badge>
-
-                        <Badge
-                          className={cn(
-                            {
-                              "bg-slate-500": f.state === "draft",
-                              "bg-green-700": f.state === "live",
-                              "bg-red-700": f.state === "closed",
-                            },
-                            "text-white text-sm"
-                          )}
-                        >
-                          {toReadableLabel(f.state)}
-                        </Badge>
-
-                        {f.state === "live" && (
-                          <Badge
-                            className={
-                              f.isPublic
-                                ? "bg-blue-500 text-white text-sm"
-                                : "bg-yellow-300 text-black text-sm"
-                            }
-                          >
-                            {f.isPublic ? "Public" : "Private"}
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="text-sm text-muted-foreground mt-1 sm:mt-0 sm:ml-2 truncate">
-                        <div>
-                          {(() => {
-                            const count =
-                              f.questionCount ??
-                              (Array.isArray(f.questions)
-                                ? f.questions.length
-                                : 0);
-
-                            return `${count} question${count === 1 ? "" : "s"}`;
-                          })()}
-                        </div>
-                        <div>Created {fmtDate(f.createdAt)}</div>
-                      </div>
-                    </div>
-
-                    {/* Right section */}
-                    <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
-                      {renderActionButtons(f)}
-                    </div>
+        ) : (
+          currentForms.map((f) => (
+            <Card
+              key={f._id}
+              className="p-6 hover:border-purple-500 transition-all duration-300"
+            >
+              <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-3 sm:gap-0">
+                {/* Left section */}
+                <div className="flex flex-col sm:gap-3">
+                  <div
+                    className="text-lg font-semibold line-clamp-2"
+                    title={f.title || "(untitled)"}
+                  >
+                    {f.title || "(untitled)"}
                   </div>
-                </Card>
-              ))
-            )}
-            {totalPages > 1 && (
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={() =>
-                        currentPage > 1 && setCurrentPage(currentPage - 1)
-                      }
-                      className={cn(
-                        currentPage === 1 && "pointer-events-none opacity-50"
-                      )}
-                    />
-                  </PaginationItem>
 
-                  {Array.from({ length: totalPages }, (_, i) => (
-                    <PaginationItem key={i}>
-                      <PaginationLink
-                        isActive={currentPage === i + 1}
-                        onClick={() => setCurrentPage(i + 1)}
+                  <div className="flex flex-wrap items-center gap-2 mt-1 sm:mt-0">
+                    <Badge
+                      variant="outline"
+                      className="text-sm text-muted-foreground capitalize"
+                    >
+                      {f.type}
+                    </Badge>
+
+                    <Badge
+                      className={cn(
+                        {
+                          "bg-slate-500": f.state === "draft",
+                          "bg-green-700": f.state === "live",
+                          "bg-red-700": f.state === "closed",
+                        },
+                        "text-white text-sm"
+                      )}
+                    >
+                      {toReadableLabel(f.state)}
+                    </Badge>
+
+                    {f.state === "live" && (
+                      <Badge
+                        className={
+                          f.isPublic
+                            ? "bg-blue-500 text-white text-sm"
+                            : "bg-yellow-300 text-black text-sm"
+                        }
                       >
-                        {i + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
+                        {f.isPublic ? "Public" : "Private"}
+                      </Badge>
+                    )}
+                  </div>
 
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={() =>
-                        currentPage < totalPages &&
-                        setCurrentPage(currentPage + 1)
-                      }
-                      className={cn(
-                        currentPage === totalPages &&
-                          "pointer-events-none opacity-50"
-                      )}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            )}
-          </div>
-        </div>
+                  <div className="text-sm text-muted-foreground mt-1 sm:mt-0 sm:ml-2 truncate">
+                    <div>
+                      {(() => {
+                        const count =
+                          f.questionCount ??
+                          (Array.isArray(f.questions) ? f.questions.length : 0);
+
+                        return `${count} question${count === 1 ? "" : "s"}`;
+                      })()}
+                    </div>
+                    <div>Created {fmtDate(f.createdAt)}</div>
+                  </div>
+                </div>
+
+                {/* Right section */}
+                <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
+                  {renderActionButtons(f)}
+                </div>
+              </div>
+            </Card>
+          ))
+        )}
+        {totalPages > 1 && (
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() =>
+                    currentPage > 1 && setCurrentPage(currentPage - 1)
+                  }
+                  className={cn(
+                    currentPage === 1 && "pointer-events-none opacity-50"
+                  )}
+                />
+              </PaginationItem>
+
+              {Array.from({ length: totalPages }, (_, i) => (
+                <PaginationItem key={i}>
+                  <PaginationLink
+                    isActive={currentPage === i + 1}
+                    onClick={() => setCurrentPage(i + 1)}
+                  >
+                    {i + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() =>
+                    currentPage < totalPages && setCurrentPage(currentPage + 1)
+                  }
+                  className={cn(
+                    currentPage === totalPages &&
+                      "pointer-events-none opacity-50"
+                  )}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
       </div>
 
       {/* Change state confirmation */}
@@ -526,7 +516,7 @@ const Dashboard = () => {
           <SendEmail form={shareDialogOpen} />
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 };
 
