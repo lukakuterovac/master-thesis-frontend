@@ -48,7 +48,7 @@ export const submitResponse = async (formId, answers) => {
 };
 
 // Quiz results
-export const getQuizResults = async (formId) => {
-  const res = await axios.get(`/form/${formId}/quiz-results/`);
+export const getQuizResults = async (shareId) => {
+  const res = await axios.get(`/form/${shareId}/quiz-results/`);
   return res.data;
 };

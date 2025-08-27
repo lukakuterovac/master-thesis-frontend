@@ -19,6 +19,7 @@ import {
 import { getQuizResults } from "@/features/form";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import LoadingScreen from "@/components/LoadingScreen";
 
 const QuizLeaderboard = () => {
   const { id } = useParams();
@@ -54,6 +55,8 @@ const QuizLeaderboard = () => {
     startIndex + resultsPerPage
   );
 
+  if (loading) return <LoadingScreen />;
+
   return (
     <div className="w-full max-w-5xl mx-auto">
       {/* Header */}
@@ -68,21 +71,25 @@ const QuizLeaderboard = () => {
       </div>
 
       {/* Loading/Error/Empty */}
-      {loading ? (
-        <div className="text-center text-gray-500">Loading results...</div>
-      ) : error ? (
+      {error ? (
         <div className="text-center text-red-500">{error}</div>
       ) : leaderboard.length === 0 ? (
-        <div className="text-center text-gray-500">No results yet.</div>
+        <div className="text-center text-gray-700 dark:text-gray-300 text-xl">
+          No results yet.
+        </div>
       ) : (
         <>
           {/* Leaderboard */}
           <Card className="overflow-hidden shadow rounded-xl border p-0">
             <CardContent className="p-0 bg-secondary">
               <div className="grid grid-cols-12 gap-4 font-semibold border-b px-6 py-3">
-                <div className="col-span-2 text-center">Place</div>
-                <div className="col-span-8 text-left">Name</div>
-                <div className="col-span-2 text-center">Score</div>
+                <div className="col-span-3 sm:col-span-2 text-center">
+                  Place
+                </div>
+                <div className="col-span-6 sm:col-span-8 text-left">Name</div>
+                <div className="col-span-3 sm:col-span-2 text-center">
+                  Score
+                </div>
               </div>
               <ul className="divide-y">
                 {currentResults.map((entry, idx) => {
@@ -96,7 +103,7 @@ const QuizLeaderboard = () => {
                     >
                       <div
                         className={cn(
-                          "col-span-2 flex items-center justify-center",
+                          "col-span-3 sm:col-span-2 flex items-center justify-center",
                           startIndex + idx + 1 == 1
                             ? "text-yellow-300 font-bold"
                             : startIndex + idx + 1 == 2
@@ -106,12 +113,12 @@ const QuizLeaderboard = () => {
                             : ""
                         )}
                       >
-                        {startIndex + idx + 1}
+                        {startIndex + idx + 1}.
                         {startIndex + idx + 1 == 1 && (
-                          <Medal className="ml-1 w-5" />
+                          <Medal className="ml-1 w-5 hidden sm:inline" />
                         )}
                       </div>
-                      <div className="col-span-8 text-left">
+                      <div className="col-span-6 sm:col-span-8 text-left">
                         {entry.name || "Anonymous"}
                         {isCurrentUser && (
                           <Badge className="ml-2 bg-purple-500 text-white">
@@ -119,9 +126,17 @@ const QuizLeaderboard = () => {
                           </Badge>
                         )}
                       </div>
-                      <div className="col-span-2 text-center">
-                        {entry.totalScore}/{entry.maxScore} (
-                        {Math.round(entry.percentage)}%)
+                      <div className="col-span-3 sm:col-span-2 flex flex-col items-center md:flex-row md:justify-center gap-1 md:gap-3 text-xs sm:text-sm">
+                        <div className="font-medium text-gray-800 dark:text-gray-200">
+                          {entry.totalScore}
+                          <span className="text-gray-500 dark:text-gray-400">
+                            {" "}
+                            / {entry.maxScore}
+                          </span>
+                        </div>
+                        <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+                          ({Math.round(entry.percentage)}%)
+                        </div>
                       </div>
                     </li>
                   );
@@ -131,29 +146,32 @@ const QuizLeaderboard = () => {
           </Card>
 
           {/* Pagination Controls */}
-          <div className="flex justify-between items-center mt-6 w-full max-w-sm mx-auto">
+          <div className="flex justify-between sm:justify-center items-center mt-6 w-full max-w-sm mx-auto gap-4">
+            {/* Previous button */}
             <Button
               variant="outline"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage((prev) => prev - 1)}
-              className="flex-1 max-w-[120px] justify-center"
+              className="sm:w-[120px] justify-center"
             >
-              <ChevronLeft className="mr-2" />
-              Previous
+              <ChevronLeft className="mr-0 sm:mr-2" />
+              <span className="hidden sm:inline">Previous</span>
             </Button>
 
-            <span className="text-gray-500 font-medium text-center flex-1">
+            {/* Page indicator */}
+            <span className="text-gray-500 font-medium text-center text-sm sm:text-base w-fit">
               Page {currentPage} of {totalPages}
             </span>
 
+            {/* Next button */}
             <Button
               variant="outline"
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage((prev) => prev + 1)}
-              className="flex-1 max-w-[120px] justify-center"
+              className="sm:w-[120px] justify-center"
             >
-              Next
-              <ChevronRight className="ml-2" />
+              <span className="hidden sm:inline">Next</span>
+              <ChevronRight className="ml-0 sm:ml-2" />
             </Button>
           </div>
         </>

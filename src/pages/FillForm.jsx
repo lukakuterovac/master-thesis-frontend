@@ -76,7 +76,7 @@ const FillForm = () => {
         answers: formattedAnswers,
       });
 
-      localStorage.setItem(`quiz-${form._id}`, response.userToken);
+      localStorage.setItem(`quiz-${form.shareId}`, response.userToken);
       toast.success("Form submitted successfully!");
       setAnswers({});
       setFilled(true);
@@ -169,7 +169,7 @@ const FormFilledMessage = ({ form }) => {
         <div className="text-sm italic"> - InForm</div>
 
         {form.type === "quiz" && form.showResults && (
-          <Link to={`/quiz-results/${form._id}`} className="group">
+          <Link to={`/quiz-results/${form.shareId}`} className="group">
             <Button
               variant="ghost"
               className="mt-8 font-normal hover:text-yellow-400"
