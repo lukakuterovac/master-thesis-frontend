@@ -17,48 +17,48 @@ const ResponsesPage = () => {
   const [form, setForm] = useState(location.state?.form || null);
   const [responses, setResponses] = useState([]);
   const [quizResults, setQuizResults] = useState([]);
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchForm = async () => {
-      if (!form) {
-        try {
-          const data = await getFormById(id);
-          setForm(data);
-        } catch (err) {
-          console.error("Error fetching form:", err);
+    let isMounted = true; // avoid state updates if component unmounts
+
+    const fetchData = async () => {
+      setLoading(true);
+
+      try {
+        let formData = form;
+
+        if (!formData) {
+          formData = await getFormById(id);
+          if (!isMounted) return;
+          setForm(formData);
         }
-      }
-    };
-    fetchForm();
-  }, [id, form]);
+        console.log("Form", formData);
 
-  useEffect(() => {
-    const fetchResponses = async () => {
-      try {
-        const data = await getFormResponses(id);
-        setResponses(data);
-      } catch (err) {
-        console.error("Error fetching responses:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchResponses();
-  }, [id]);
+        const responsesData = await getFormResponses(id);
+        if (!isMounted) return;
+        setResponses(responsesData);
+        console.log("Responses", responsesData);
 
-  useEffect(() => {
-    const fetchResponses = async () => {
-      try {
-        const data = await getQuizResults(id);
-        setQuizResults(data);
+        if (formData.shareId) {
+          const quizResultsData = await getQuizResults(formData.shareId);
+          if (!isMounted) return;
+          setQuizResults(quizResultsData);
+          console.log("QuizResults", quizResultsData);
+        }
       } catch (err) {
-        console.error("Error fetching responses:", err);
+        console.error("Error fetching data:", err);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
-    fetchResponses();
+
+    fetchData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   if (loading) return <LoadingScreen />;
@@ -84,7 +84,11 @@ const ResponsesPage = () => {
         <SurveyAnalytics form={form} responses={responses} />
       )}
       {form.type === "quiz" && (
-        <QuizResults form={form} responses={responses} />
+        <QuizResults
+          form={form}
+          responses={responses}
+          quizResults={quizResults}
+        />
       )}
     </div>
   );

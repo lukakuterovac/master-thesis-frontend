@@ -236,6 +236,70 @@ const CreateForm = () => {
           }
         }
       }
+
+      if (form.type === "quiz") {
+        if (q.type === "short-text" || q.type === "long-text") {
+          if (!Array.isArray(q.correctAnswer) || q.correctAnswer.length === 0) {
+            errors.push(
+              `Question ${index + 1} (${
+                q.type
+              }) must have at least one correct answer.`
+            );
+          } else {
+            const emptyAnswerIndex = q.correctAnswer.findIndex(
+              (ans) => !ans || ans.trim() === ""
+            );
+            if (emptyAnswerIndex !== -1) {
+              errors.push(
+                `Question ${index + 1} (${
+                  q.type
+                }) has an empty correct answer at position ${
+                  emptyAnswerIndex + 1
+                }.`
+              );
+            }
+          }
+        }
+
+        if (q.type === "single-choice") {
+          if (!Array.isArray(q.correctAnswer) || q.correctAnswer.length !== 1) {
+            errors.push(
+              `Question ${
+                index + 1
+              } (single-choice) must have exactly one correct answer.`
+            );
+          } else if (!q.choices.includes(q.correctAnswer[0])) {
+            errors.push(
+              `Question ${
+                index + 1
+              } (single-choice) correct answer must be one of the choices.`
+            );
+          }
+        }
+
+        if (q.type === "multi-choice") {
+          if (!Array.isArray(q.correctAnswer) || q.correctAnswer.length === 0) {
+            errors.push(
+              `Question ${
+                index + 1
+              } (multi-choice) must have at least one correct answer.`
+            );
+          } else {
+            const invalidAnswers = q.correctAnswer.filter(
+              (ans) => !q.choices.includes(ans)
+            );
+            if (invalidAnswers.length > 0) {
+              errors.push(
+                `Question ${
+                  index + 1
+                } (multi-choice) has correct answers that are not in the choices: ${invalidAnswers.join(
+                  ", "
+                )}.`
+              );
+            }
+          }
+        }
+      }
     });
 
     return {
