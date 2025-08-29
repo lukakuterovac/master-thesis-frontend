@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -30,6 +30,8 @@ import {
   Lock,
   Upload,
   Loader2,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/Sidebar";
@@ -898,52 +900,84 @@ const CreateForm = () => {
   );
 };
 
-// Components
-const FormTypeButton = ({ formType, setFormField }) => (
-  <Popover>
-    <PopoverTrigger asChild>
-      <Button
-        variant="ghost"
-        role="combobox"
-        className="max-w-fit justify-evenly"
-      >
-        <span
-          className={cn(
-            formType ? "font-semibold" : "text-muted-foreground italic"
-          )}
+// Component
+const FormTypeButton = ({ formType, setFormField }) => {
+  const [open, setOpen] = useState(false);
+  const timeoutRef = useRef(null);
+
+  const handleOpen = () => {
+    clearTimeout(timeoutRef.current);
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    timeoutRef.current = setTimeout(() => {
+      setOpen(false);
+    }, 150); // small delay for smoother transition
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          className="group max-w-fit justify-between items-center gap-1"
+          onMouseEnter={handleOpen}
+          onMouseLeave={handleClose}
         >
-          {formType
-            ? formTypes.find((ft) => ft.value === formType)?.label || "Type"
-            : "Type"}
-        </span>
-      </Button>
-    </PopoverTrigger>
-    <PopoverContent align="start" className="max-w-fit p-0">
-      <Command>
-        <CommandList>
-          <CommandGroup>
-            {formTypes.map((item) => (
-              <CommandItem
-                key={item.value}
-                onSelect={() => {
-                  setFormField("type", item.value);
-                }}
-              >
-                {item.label}
-                <Check
-                  className={cn(
-                    "ml-auto h-4 w-4",
-                    formType === item.value ? "opacity-100" : "opacity-0"
-                  )}
-                />
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </CommandList>
-      </Command>
-    </PopoverContent>
-  </Popover>
-);
+          <span
+            className={cn(
+              formType ? "font-semibold" : "text-muted-foreground italic"
+            )}
+          >
+            {formType
+              ? `Type: ${
+                  formTypes.find((ft) => ft.value === formType)?.label || "Type"
+                }`
+              : "Select type"}
+          </span>
+          <ChevronRight
+            className={cn(
+              "h-4 w-4 text-muted-foreground transition-transform duration-200",
+              open && "rotate-90 scale-110"
+            )}
+          />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        className="max-w-fit p-0"
+        onMouseEnter={handleOpen}
+        onMouseLeave={handleClose}
+      >
+        <Command>
+          <CommandList>
+            <CommandGroup>
+              {formTypes.map((item) => (
+                <CommandItem
+                  key={item.value}
+                  onSelect={(e) => {
+                    setFormField("type", item.value);
+                    e.preventDefault();
+                  }}
+                >
+                  {item.label}
+                  <Check
+                    className={cn(
+                      "ml-auto h-4 w-4",
+                      formType === item.value ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 const FormControlButtons = ({
   form,
