@@ -1,12 +1,22 @@
+@import url("https://fonts.googleapis.com/css2?family=Fredoka:wdth,wght@75..125,300..700&family=Quicksand:wght@300..700&display=swap");
+
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Custom XS breakpoint */
 @theme {
   --breakpoint-xs: 28rem;
 }
 
+/* Fonts */
+@theme {
+  --font-quicksand: "Quicksand", sans-serif;
+}
+
+/* Dark Theme */
 @custom-variant dark (&:is(.dark *));
 
+/* Hide number input spinner */
 @layer utilities {
   .no-spinner::-webkit-inner-spin-button,
   .no-spinner::-webkit-outer-spin-button {
@@ -19,6 +29,7 @@
   }
 }
 
+/* Custom animations */
 @theme {
   --animate-spin-z: spin-z 3s ease-in-out infinite;
 
