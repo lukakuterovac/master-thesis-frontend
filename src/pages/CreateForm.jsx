@@ -922,7 +922,10 @@ const FormTypeButton = ({ formType, setFormField }) => {
         <Button
           variant="outline"
           role="combobox"
-          className="group max-w-fit justify-between items-center gap-1"
+          className={cn(
+            "group max-w-fit justify-between items-center gap-1 hover:border-purple-500 dark:hover:border-purple-500",
+            open && "border-purple-500 dark:border-purple-500"
+          )}
           onMouseEnter={handleOpen}
           onMouseLeave={handleClose}
         >
@@ -940,7 +943,7 @@ const FormTypeButton = ({ formType, setFormField }) => {
           <ChevronRight
             className={cn(
               "h-4 w-4 text-muted-foreground transition-transform duration-200",
-              open && "rotate-90 scale-110"
+              open && "rotate-90 scale-110 text-purple-500"
             )}
           />
         </Button>
@@ -961,11 +964,14 @@ const FormTypeButton = ({ formType, setFormField }) => {
                     setFormField("type", item.value);
                     e.preventDefault();
                   }}
+                  className={
+                    "hover:text-purple-500 dark:hover:text-purple-500 transition-colors"
+                  }
                 >
                   {item.label}
                   <Check
                     className={cn(
-                      "ml-auto h-4 w-4",
+                      "ml-auto h-4 w-4 text-purple-500 transition-opacity duration-200",
                       formType === item.value ? "opacity-100" : "opacity-0"
                     )}
                   />
@@ -1069,13 +1075,16 @@ const FormControlButtons = ({
 
 const FormSettingsButton = ({ setSettingsSidebarOpen, className }) => (
   <Button
-    variant="ghost"
-    className={cn("hover:text-purple-900", className)}
+    variant={"outline"}
+    className={cn(
+      "group hover:text-purple-500 hover:border-purple-500 dark:hover:border-purple-500 hover:scale-110",
+      className
+    )}
     onClick={() => setSettingsSidebarOpen(true)}
     aria-label="Open settings"
     title="Open settings"
   >
-    <Settings2 />
+    <Settings2 className="group-hover:animate-spin-z" />
   </Button>
 );
 
