@@ -7,6 +7,7 @@ import {
   BarChart,
   Link2,
   Workflow,
+  Compass,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -144,7 +145,7 @@ const Home = () => {
         <Card className="group hover:border-purple-500 duration-300 transition-all">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-yellow-500 transition-all duration-[600ms] ease-in-out group-hover:rotate-x-180 group-hover:text-purple-400" />
+              <Compass className="w-5 h-5 text-yellow-500 transition-all duration-[600ms] ease-in-out group-hover:rotate-x-180 group-hover:text-purple-400" />
               Explore
             </CardTitle>
           </CardHeader>

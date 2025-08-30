@@ -1,34 +1,28 @@
-import { useState } from "react";
-import { Sun, Moon, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Sun, Moon } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 
 export default function DarkModeToggle() {
   const { theme, setTheme } = useTheme();
   const next = theme === "dark" ? "light" : "dark";
 
-  const [loading, setLoading] = useState(false);
-
   const handleToggle = () => {
-    setLoading(true);
     setTheme(next);
-    setLoading(false);
+    // simulate a short delay so animations feel smooth
   };
 
   return (
-    <Button
-      variant="ghost"
+    <button
       onClick={handleToggle}
-      className="p-2 relative w-10 h-10 overflow-visible"
       aria-label="Toggle Dark Mode"
+      className="relative flex items-center justify-center w-10 h-10
+                 text-gray-700 dark:text-gray-200 
+                 hover:text-yellow-500 dark:hover:text-blue-500 transition-colors duration-300 ease-in-out"
     >
-      {loading ? (
-        <Loader2 className="w-5 h-5 animate-spin" />
-      ) : theme === "dark" ? (
-        <Moon className="w-5 h-5 transition-all duration-300" />
+      {theme === "dark" ? (
+        <Moon className="w-4 h-4 transition-transform duration-300 ease-in-out transform hover:scale-110 hover:-rotate-12" />
       ) : (
-        <Sun className="w-5 h-5 transition-all duration-300" />
+        <Sun className="w-4 h-4 transition-transform duration-300 ease-in-out transform hover:scale-110 hover:rotate-12" />
       )}
-    </Button>
+    </button>
   );
 }
