@@ -348,7 +348,7 @@ const CreateForm = () => {
         const data = await createForm(payload);
         console.log("Successfully created form:", data);
         toast.success(`${toReadableLabel(form.type)} created!`);
-        setForm(data);
+        navigate(`/edit/${data._id}`, { state: { form: data } });
       }
     } catch (error) {
       if (!error.isHandled) {
