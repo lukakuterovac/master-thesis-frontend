@@ -16,7 +16,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Check,
   Settings2,
@@ -30,7 +36,6 @@ import {
   Lock,
   Upload,
   Loader2,
-  ChevronDown,
   ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -51,12 +56,7 @@ import {
 import { QRCodeCanvas } from "qrcode.react";
 import { sendEmail } from "@/features/email";
 import LoadingScreen from "@/components/LoadingScreen";
-
-const formTypes = [
-  { value: "form", label: "Form" },
-  { value: "survey", label: "Survey" },
-  { value: "quiz", label: "Quiz" },
-];
+import { fonts, formTypes } from "@/models";
 
 function reorderArray(array, fromIndex, toIndex) {
   const result = [...array];
@@ -336,7 +336,7 @@ const CreateForm = () => {
     try {
       const payload = {
         ...form,
-        questions: form.questions.map(({ tempId: _, ...rest }) => rest),
+        questions: form.questions.map(({ tempId, ...rest }) => rest),
       };
 
       if (form._id) {
@@ -529,7 +529,14 @@ const CreateForm = () => {
 
   return (
     <>
-      <div className="w-full max-w-5xl mx-auto space-y-6">
+      <div
+        className="w-full max-w-5xl mx-auto space-y-6"
+        style={{
+          fontFamily: form.appearance?.font
+            ? fonts[form.appearance.font]?.css
+            : undefined,
+        }}
+      >
         {/* Top Controls */}
         <Card className="p-2 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <div className="flex items-center justify-between md:justify-start gap-2">
@@ -627,6 +634,7 @@ const CreateForm = () => {
                   onMoveDown={() => moveQuestionDown(q._id || q.tempId)}
                   onDelete={() => deleteQuestion(q._id || q.tempId)}
                   disabled={isSaving}
+                  formAppearance={form.appearance}
                 />
               ))}
           </div>
@@ -639,6 +647,33 @@ const CreateForm = () => {
         title={form.type ? `${capitalize(form.type)} settings` : "Settings"}
       >
         <div className="flex flex-col space-y-8">
+          {/* Font Selector */}
+          <div className="flex flex-col space-y-1">
+            <Label htmlFor="font" className="text-sm">
+              Font
+            </Label>
+            <Select
+              value={form.appearance?.font}
+              onValueChange={(value) =>
+                setFormField("appearance", {
+                  ...form.appearance,
+                  font: value,
+                })
+              }
+            >
+              <SelectTrigger id="font" className="w-full">
+                <SelectValue placeholder="Select font" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(fonts).map(([key, { label, css }]) => (
+                  <SelectItem key={key} value={key} style={{ fontFamily: css }}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* General Section */}
           <div className="space-y-3">
             <Label htmlFor="is-public" className="text-sm font-medium">
@@ -683,7 +718,7 @@ const CreateForm = () => {
             >
               Expiration
             </Label>
-            <div className="w-64">
+            <div className="w-full">
               <DatePicker
                 htmlForId="expiration-date"
                 form={form}
@@ -708,7 +743,7 @@ const CreateForm = () => {
             >
               Response Limit
             </Label>
-            <div className="w-64">
+            <div className="w-full">
               <Input
                 type="number"
                 id="response-limit"

@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { toReadableLabel } from "@/lib/helpers";
 import { Loader2, Sparkles, Trophy } from "lucide-react";
 import LoadingScreen from "@/components/LoadingScreen";
+import { fonts } from "@/models";
 
 const FillForm = () => {
   const { shareId } = useParams();
@@ -93,7 +94,14 @@ const FillForm = () => {
   if (filled) return <FormFilledMessage form={form} />;
 
   return (
-    <div className="w-full max-w-5xl mx-auto">
+    <div
+      className="w-full max-w-5xl mx-auto"
+      style={{
+        fontFamily: form.appearance?.font
+          ? fonts[form.appearance.font]?.css
+          : undefined,
+      }}
+    >
       <div className="flex flex-col gap-6">
         <Card className="p-6 gap-2">
           <div className="text-2xl font-bold flex justify-between">

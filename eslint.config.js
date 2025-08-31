@@ -22,8 +22,11 @@ export default defineConfig([
         sourceType: "module",
       },
     },
+    plugins: ["react"],
     rules: {
-      "no-unused-vars": ["warn", { varsIgnorePattern: "^[A-Z_]" }],
+      "no-unused-vars": "off",
+      "import/no-dynamic-require": "warn",
+      "import/no-nodejs-modules": "warn",
     },
   },
 ]);
