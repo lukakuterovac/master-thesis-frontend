@@ -1,3 +1,5 @@
+import { questionTypes } from "@/models";
+
 let navigate = null;
 let signOutFunc = null;
 
@@ -30,3 +32,9 @@ export const fmtDate = (iso) =>
         timeStyle: "short",
       })
     : "-";
+
+export const questionTypeLabel = (questionType) => {
+  return (
+    questionTypes.find((type) => type.value === questionType).label || "Error"
+  );
+};

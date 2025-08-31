@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { toReadableLabel } from "@/lib/helpers";
+import { questionTypeLabel } from "@/lib/helpers";
 import { Loader2, Sparkles, Trophy } from "lucide-react";
 import LoadingScreen from "@/components/LoadingScreen";
 import { fonts } from "@/models";
@@ -21,6 +21,8 @@ const FillForm = () => {
   const [name, setName] = useState("");
   const [answers, setAnswers] = useState({});
   const [filled, setFilled] = useState(false);
+  const [showRest, setShowRest] = useState(false);
+  const [logicAnswered, setLogicAnswered] = useState(false);
 
   const fetchForm = useCallback(async () => {
     setLoading(true);
@@ -40,6 +42,44 @@ const FillForm = () => {
 
   const handleChange = (questionId, value) => {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
+  };
+
+  const handleLogicAnswer = async (answer) => {
+    if (!form) return;
+    const logicQuestion = form.questions.find((q) => q.isLogicQuestion);
+    if (!logicQuestion) return;
+
+    const updatedAnswers = { ...answers, [logicQuestion._id]: answer };
+    setAnswers(updatedAnswers);
+    setLogicAnswered(true);
+
+    if (answer === "Yes") {
+      setShowRest(true);
+    } else {
+      await submitForm(updatedAnswers);
+    }
+  };
+
+  const submitForm = async (answersToSubmit = null) => {
+    if (!form) return;
+
+    const formattedAnswers = form.questions.map((q) => ({
+      questionId: q._id,
+      answer: answersToSubmit?.[q._id] ?? answers[q._id] ?? null,
+    }));
+
+    try {
+      const response = await submitResponse(form._id, {
+        name: name.trim() || null,
+        answers: formattedAnswers,
+      });
+      localStorage.setItem(`quiz-${form.shareId}`, response.userToken);
+      toast.success("Form submitted successfully!");
+      setAnswers({});
+      setFilled(true);
+    } catch (error) {
+      if (!error.isHandled) toast.error("Failed to submit form.");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -66,32 +106,17 @@ const FillForm = () => {
       );
     }
 
-    const formattedAnswers = form.questions.map((q) => ({
-      questionId: q._id,
-      answer: answers[q._id] ?? null,
-    }));
-
-    try {
-      const response = await submitResponse(form._id, {
-        name: name.trim() || null,
-        answers: formattedAnswers,
-      });
-
-      localStorage.setItem(`quiz-${form.shareId}`, response.userToken);
-      toast.success("Form submitted successfully!");
-      setAnswers({});
-      setFilled(true);
-    } catch (error) {
-      if (!error.isHandled) toast.error("Failed to submit form.");
-    }
+    await submitForm();
   };
 
   if (loading) return <LoadingScreen />;
-
   if (!form) return <FormStateMessage message="Form not found." />;
   if (form.state === "closed")
     return <FormStateMessage message="Form is closed." />;
   if (filled) return <FormFilledMessage form={form} />;
+
+  const logicQuestion = form.questions.find((q) => q.isLogicQuestion);
+  const restQuestions = form.questions.filter((q) => !q.isLogicQuestion);
 
   return (
     <div
@@ -126,7 +151,7 @@ const FillForm = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Your name"
-                className="mt-2 mb-1.5 focus-visible:border-purple-500  dark:focus-visible:border-purple-500"
+                className="mt-2 mb-1.5 focus-visible:border-purple-500 dark:focus-visible:border-purple-500"
               />
               <p className="text-sm text-muted-foreground">
                 Your name is used to show your score on the leaderboard.
@@ -134,21 +159,47 @@ const FillForm = () => {
             </Card>
           )}
 
-          {form.questions.map((q) => (
-            <QuestionCard
-              key={q._id}
-              question={q}
-              value={answers[q._id]}
-              onChange={handleChange}
-            />
-          ))}
+          {/* Logic question first */}
+          {logicQuestion && !logicAnswered && (
+            <Card className="p-4 gap-1">
+              <Label className="text-lg">{logicQuestion.questionText}</Label>
+              <div className="flex gap-4">
+                <Button
+                  onClick={() => handleLogicAnswer("Yes")}
+                  className="flex-1 bg-green-500 hover:bg-green-700 text-white"
+                >
+                  Yes
+                </Button>
+                <Button
+                  onClick={() => handleLogicAnswer("No")}
+                  className="flex-1 bg-red-500 hover:bg-red-900 text-white"
+                >
+                  No
+                </Button>
+              </div>
+            </Card>
+          )}
 
-          <Button
-            type="submit"
-            className="w-full text-lg py-5 bg-purple-500 hover:bg-purple-700 text-white"
-          >
-            Submit
-          </Button>
+          {/* Remaining questions shown only after Yes */}
+          {showRest &&
+            restQuestions.map((q) => (
+              <QuestionCard
+                key={q._id}
+                question={q}
+                value={answers[q._id]}
+                onChange={handleChange}
+              />
+            ))}
+
+          {/* Submit button only shown after Yes */}
+          {showRest && (
+            <Button
+              type="submit"
+              className="w-full text-lg py-5 bg-purple-500 hover:bg-purple-700 text-white"
+            >
+              Submit
+            </Button>
+          )}
         </form>
       </div>
     </div>
@@ -273,7 +324,7 @@ const QuestionCard = ({ question, value, onChange }) => {
       <div className="space-y-4">
         <div className="flex-col space-y-2">
           <div className="text-xs text-muted-foreground">
-            {toReadableLabel(question.type)}
+            {questionTypeLabel(question.type)}
           </div>
           <div className="flex justify-between">
             <Label className="text-lg" htmlFor={question._id}>

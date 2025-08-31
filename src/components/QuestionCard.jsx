@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -18,18 +18,19 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-import { Check, ArrowUp, ArrowDown, Trash2, Plus } from "lucide-react";
+import {
+  Check,
+  ArrowUp,
+  ArrowDown,
+  Trash2,
+  Plus,
+  ChevronRight,
+} from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-
-const questionTypes = [
-  { value: "short-text", label: "Short text" },
-  { value: "long-text", label: "Long text" },
-  { value: "single-choice", label: "Single choice" },
-  { value: "multi-choice", label: "Multiple choice" },
-];
+import { questionTypes } from "@/models";
 
 export const QuestionCard = ({
-  isQuiz,
+  formType,
   question,
   onChange,
   onMoveUp,
@@ -61,51 +62,6 @@ export const QuestionCard = ({
   const handleRequiredChange = (checked) => {
     onChange({ ...question, required: checked });
   };
-
-  const renderDropdown = () => (
-    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          role="combobox"
-          className="justify-between min-w-[150px]"
-        >
-          <span
-            className={cn(
-              selectedType ? "font-medium" : "text-muted-foreground italic"
-            )}
-          >
-            {selectedType ? selectedType.label : "Select type"}
-          </span>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-[200px] p-0">
-        <Command>
-          <CommandList>
-            <CommandGroup>
-              {questionTypes.map((item) => (
-                <CommandItem
-                  key={item.value}
-                  onSelect={() => handleTypeChange(item)}
-                  className="cursor-pointer"
-                >
-                  {item.label}
-                  <Check
-                    className={cn(
-                      "ml-auto h-4 w-4",
-                      selectedType?.value === item.value
-                        ? "opacity-100"
-                        : "opacity-0"
-                    )}
-                  />
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  );
 
   const renderControls = () => (
     <div className="flex gap-1">
@@ -221,12 +177,22 @@ export const QuestionCard = ({
     return null;
   };
 
+  const selectedTypeObj = useMemo(
+    () => questionTypes.find((type) => type.value === question.type),
+    [question.type]
+  );
+
   return (
     <Card className="p-4">
-      <div className="flex justify-between items-center">
-        {renderDropdown()}
-        {renderControls()}
-      </div>
+      {!question.isLogicQuestion && (
+        <div className="flex justify-between items-center">
+          <QuestionTypeDropdown
+            selectedType={selectedTypeObj}
+            handleTypeChange={handleTypeChange}
+          />
+          {renderControls()}
+        </div>
+      )}
 
       <div className="flex gap-4">
         <Label htmlFor={`title-${question._id || question.tempId}`}>
@@ -243,7 +209,7 @@ export const QuestionCard = ({
 
       {renderAdditionalContent()}
 
-      {!isQuiz && (
+      {formType === "form" && (
         <Label
           htmlFor={`required-${question._id || question.tempId}`}
           className="ml-auto text-sm w-max font-medium cursor-pointer border rounded-md px-4 py-2"
@@ -257,7 +223,23 @@ export const QuestionCard = ({
         </Label>
       )}
 
-      {isQuiz && (
+      {question.isLogicQuestion && (
+        <p className="text-sm">
+          This is a logic question with two options: <strong>Yes</strong> and{" "}
+          <strong>No</strong>.
+          <ul className="list-disc list-inside mt-1">
+            <li>
+              Selecting <strong>Yes</strong> will reveal the remaining
+              questions.
+            </li>
+            <li>
+              Selecting <strong>No</strong> will submit the form immediately.
+            </li>
+          </ul>
+        </p>
+      )}
+
+      {formType === "quiz" && (
         <div className="space-y-2 mt-4 p-2">
           <Label htmlFor={`answer-${question._id || question.tempId}`}>
             Question answer
@@ -371,5 +353,86 @@ export const QuestionCard = ({
         </div>
       )}
     </Card>
+  );
+};
+
+const QuestionTypeDropdown = ({ selectedType, handleTypeChange }) => {
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const timeoutRef = useRef(null);
+
+  const handleOpen = () => {
+    clearTimeout(timeoutRef.current);
+    setPopoverOpen(true);
+  };
+
+  const handleClose = () => {
+    timeoutRef.current = setTimeout(() => {
+      setPopoverOpen(false);
+    }, 150);
+  };
+
+  return (
+    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          className={cn(
+            "group max-w-fit justify-between items-center gap-1 hover:border-purple-500 dark:hover:border-purple-500",
+            popoverOpen && "border-purple-500 dark:border-purple-500"
+          )}
+          onMouseEnter={handleOpen}
+          onMouseLeave={handleClose}
+        >
+          <span
+            className={cn(
+              selectedType ? "font-semibold" : "text-muted-foreground italic"
+            )}
+          >
+            {selectedType ? selectedType.label : "Select type"}
+          </span>
+          <ChevronRight
+            className={cn(
+              "h-4 w-4 text-muted-foreground transition-transform duration-200",
+              popoverOpen && "rotate-90 scale-110 text-purple-500"
+            )}
+          />
+        </Button>
+      </PopoverTrigger>
+
+      <PopoverContent
+        align="start"
+        className="max-w-fit p-0"
+        onMouseEnter={handleOpen}
+        onMouseLeave={handleClose}
+      >
+        <Command>
+          <CommandList>
+            <CommandGroup>
+              {questionTypes.map((item) => (
+                <CommandItem
+                  key={item.value}
+                  onSelect={(e) => {
+                    handleTypeChange(item);
+                    e.preventDefault();
+                  }}
+                  className="hover:text-purple-500 dark:hover:text-purple-500 transition-colors"
+                >
+                  {item.label}
+                  <Check
+                    className={cn(
+                      "ml-auto h-4 w-4 text-purple-500 transition-opacity duration-200",
+                      selectedType?.value === item.value
+                        ? "opacity-100"
+                        : "opacity-0"
+                    )}
+                  />
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 };

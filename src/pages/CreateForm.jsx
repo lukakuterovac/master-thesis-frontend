@@ -127,7 +127,29 @@ const CreateForm = () => {
 
   // Handlers
   const setFormField = useCallback((field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => {
+      let updatedForm = { ...prev, [field]: value };
+
+      if (field === "type") {
+        if (value === "logic") {
+          if (!updatedForm.questions.some((q) => q.isLogicQuestion)) {
+            const logicQuestion = {
+              tempId: nanoid(),
+              type: "yes-no",
+              questionText: "",
+              isLogicQuestion: true,
+            };
+            updatedForm.questions = [logicQuestion, ...updatedForm.questions];
+          }
+        } else {
+          updatedForm.questions = updatedForm.questions.filter(
+            (q) => !q.isLogicQuestion
+          );
+        }
+      }
+
+      return updatedForm;
+    });
   }, []);
 
   const addQuestion = useCallback(() => {
@@ -191,7 +213,8 @@ const CreateForm = () => {
     setForm((prev) => ({
       ...prev,
       questions: prev.questions.filter(
-        (q) => q.tempId !== questionId && q._id !== questionId
+        (q) =>
+          q.tempId !== questionId && q._id !== questionId && !q.isLogicQuestion
       ),
     }));
   }, []);
@@ -303,6 +326,22 @@ const CreateForm = () => {
         }
       }
     });
+
+    // Logic form validation: check that there is at least one non-logic question
+    if (form.type === "logic") {
+      const logicQuestions = form.questions.filter((q) => q.isLogicQuestion);
+      const nonLogicQuestions = form.questions.filter(
+        (q) => !q.isLogicQuestion
+      );
+      if (logicQuestions.length === 0) {
+        errors.push("Logic form must have a logic question.");
+      }
+      if (nonLogicQuestions.length === 0) {
+        errors.push(
+          "Logic form must have at least one other question besides the logic question."
+        );
+      }
+    }
 
     return {
       isValid: errors.length === 0,
@@ -625,7 +664,7 @@ const CreateForm = () => {
               form.questions.map((q) => (
                 <QuestionCard
                   key={q._id || q.tempId}
-                  isQuiz={form.type === "quiz"}
+                  formType={form.type}
                   question={q}
                   onChange={(updatedFields) =>
                     updateQuestion(q._id || q.tempId, updatedFields)

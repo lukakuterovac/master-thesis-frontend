@@ -80,9 +80,10 @@ const ResponsesPage = () => {
       {form.type === "form" && (
         <FormResponses form={form} responses={responses} />
       )}
-      {form.type === "survey" && (
-        <SurveyAnalytics form={form} responses={responses} />
-      )}
+      {form.type === "survey" ||
+        (form.type === "logic" && (
+          <SurveyAnalytics form={form} responses={responses} />
+        ))}
       {form.type === "quiz" && (
         <QuizResults
           form={form}

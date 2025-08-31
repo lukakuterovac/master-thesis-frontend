@@ -80,41 +80,6 @@ function countByChoice(values, choices) {
     .sort((a, b) => b.value - a.value);
 }
 
-function ratingStats(values) {
-  const nums = values
-    .flatMap((v) => (Array.isArray(v) ? v : [v]))
-    .map((n) => Number(n))
-    .filter((n) => !Number.isNaN(n));
-  if (!nums.length) return { avg: 0, median: 0, min: 0, max: 0, dist: [] };
-
-  const avg = nums.reduce((a, b) => a + b, 0) / nums.length;
-  const sorted = [...nums].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-  const median =
-    sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
-  const min = sorted[0];
-  const max = sorted[sorted.length - 1];
-
-  const counts = {};
-  for (const n of nums) counts[String(n)] = (counts[String(n)] || 0) + 1;
-  const dist = Object.entries(counts)
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => Number(a.name) - Number(b.name));
-
-  return { avg, median, min, max, dist };
-}
-
-function groupByDateDay(values) {
-  const counts = {};
-  for (const v of values) {
-    const key = v.date.toISOString().slice(0, 10);
-    counts[key] = (counts[key] || 0) + 1;
-  }
-  return Object.entries(counts)
-    .map(([date, value]) => ({ date, value }))
-    .sort((a, b) => (a.date < b.date ? -1 : 1));
-}
-
 /** ---------- question renderers ---------- */
 
 function ChoiceQuestionCard({ q, responses }) {
@@ -260,111 +225,6 @@ function ChoiceQuestionCard({ q, responses }) {
   );
 }
 
-function RatingQuestionCard({ q, responses }) {
-  const values = useMemo(
-    () => getAnswersForQuestion(responses, q._id),
-    [responses, q._id]
-  );
-  const stats = useMemo(() => ratingStats(values), [values]);
-
-  const chartConfig = { value: { label: "Count" } };
-
-  return (
-    <Card className="flex flex-col">
-      <CardHeader className="pb-2">
-        <CardTitle>{q.questionText}</CardTitle>
-        <CardDescription>Rating • {values.length} responses</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <ChartContainer config={chartConfig} className="w-full h-[280px]">
-          <BarChart data={stats.dist}>
-            <CartesianGrid vertical={false} />
-            <XAxis dataKey="name" tickLine={false} axisLine={false} />
-            <YAxis allowDecimals={false} />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <Bar dataKey="value" radius={6} />
-          </BarChart>
-        </ChartContainer>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
-          <div className="rounded-lg border p-3">
-            <div className="text-muted-foreground">Average</div>
-            <div className="text-lg font-semibold tabular-nums">
-              {stats.avg.toFixed(2)}
-            </div>
-          </div>
-          <div className="rounded-lg border p-3">
-            <div className="text-muted-foreground">Median</div>
-            <div className="text-lg font-semibold tabular-nums">
-              {stats.median.toFixed(2)}
-            </div>
-          </div>
-          <div className="rounded-lg border p-3">
-            <div className="text-muted-foreground">Min</div>
-            <div className="text-lg font-semibold tabular-nums">
-              {stats.min}
-            </div>
-          </div>
-          <div className="rounded-lg border p-3">
-            <div className="text-muted-foreground">Max</div>
-            <div className="text-lg font-semibold tabular-nums">
-              {stats.max}
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function DateQuestionCard({ q, responses }) {
-  const values = useMemo(
-    () =>
-      getAnswersForQuestion(responses, q._id)
-        .flatMap((v) => (Array.isArray(v) ? v : [v]))
-        .map((d) => ({ date: new Date(d) }))
-        .filter((d) => !Number.isNaN(d.date.getTime())),
-    [responses, q._id]
-  );
-  const series = useMemo(() => groupByDateDay(values), [values]);
-  const chartConfig = { value: { label: "Submissions" } };
-
-  return (
-    <Card className="flex flex-col">
-      <CardHeader className="pb-2">
-        <CardTitle>{q.questionText}</CardTitle>
-        <CardDescription>Date • {values.length} responses</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <ChartContainer config={chartConfig} className="w-full h-[280px]">
-          <LineChart data={series}>
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="date"
-              tickLine={false}
-              axisLine={false}
-              minTickGap={24}
-            />
-            <YAxis allowDecimals={false} />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <Line
-              type="monotone"
-              dataKey="value"
-              stroke="var(--chart-1)"
-              dot={false}
-              strokeWidth={2}
-            />
-          </LineChart>
-        </ChartContainer>
-        <div className="text-sm text-muted-foreground">
-          Total submissions:{" "}
-          <span className="font-medium">{values.length}</span>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 function TextQuestionCard({ q, responses }) {
   const allAnswers = useMemo(
     () =>
@@ -480,19 +340,10 @@ const RENDERERS = {
   "multi-choice": ({ q, responses }) => (
     <ChoiceQuestionCard q={q} responses={responses} />
   ),
-  rating: ({ q, responses }) => (
-    <RatingQuestionCard q={q} responses={responses} />
-  ),
-  date: ({ q, responses }) => <DateQuestionCard q={q} responses={responses} />,
-  "short-text": ({ q, responses }) => (
-    <TextQuestionCard q={q} responses={responses} />
-  ),
   "long-text": ({ q, responses }) => (
     <TextQuestionCard q={q} responses={responses} />
   ),
 };
-
-/** ---------- main component ---------- */
 
 export default function SurveyAnalytics({ form, responses }) {
   if (!form?.questions?.length) {
@@ -503,10 +354,117 @@ export default function SurveyAnalytics({ form, responses }) {
     );
   }
 
+  const logicQuestion = form.questions.find((q) => q.isLogicQuestion);
+  const otherQuestions = form.questions.filter((q) => !q.isLogicQuestion);
+
+  /** ---------- helpers for logic question ---------- */
+  const logicValues = logicQuestion
+    ? getAnswersForQuestion(responses, logicQuestion._id)
+    : [];
+
+  const yesCount = logicValues.filter((v) => v === "Yes").length;
+  const noCount = logicValues.filter((v) => v === "No").length;
+
+  const logicData = [
+    { name: "Yes", value: yesCount },
+    { name: "No", value: noCount },
+  ];
+
+  function CustomChartTooltip({ active, payload }) {
+    if (active && payload && payload.length) {
+      const { name, value, fill } = payload[0].payload;
+      return (
+        <div className="rounded-md px-3 py-2 bg-background">
+          <div className="flex gap-2 items-center justify-between">
+            <span
+              className="w-4 h-4 rounded-[25%]"
+              style={{ backgroundColor: fill }}
+            ></span>
+            <span className="font-medium">{name}</span>
+            <span>{value}</span>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-6">
-        {form.questions.map((q) => {
+        {/* Logic question summary with Pie Chart */}
+        {logicQuestion && (
+          <Card className="flex flex-col border-2">
+            <CardHeader className="pb-2">
+              <CardTitle>{logicQuestion.questionText}</CardTitle>
+              <CardDescription>
+                Logic question • {logicValues.length} responses
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <ChartContainer
+                config={{
+                  value: { label: "Responses" },
+                  Yes: { label: "Yes", color: COLORS[0] },
+                  No: { label: "No", color: COLORS[1] },
+                }}
+                className="mx-auto aspect-square max-h-[280px] w-full"
+              >
+                <PieChart width={200} height={200}>
+                  <ChartTooltip
+                    cursor={false}
+                    content={<CustomChartTooltip />}
+                  />
+                  <Pie
+                    data={[
+                      { name: "Yes", value: yesCount, fill: COLORS[0] },
+                      { name: "No", value: noCount, fill: COLORS[1] },
+                    ]}
+                    nameKey="name"
+                    dataKey="value"
+                    animationBegin={0}
+                  >
+                    <Cell fill={COLORS[0]} />
+                    <Cell fill={COLORS[1]} />
+                  </Pie>
+                </PieChart>
+              </ChartContainer>
+
+              {/* Legend */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                {(() => {
+                  const total = yesCount + noCount || 1;
+                  const logicData = [
+                    { name: "Yes", value: yesCount, fill: COLORS[0] },
+                    { name: "No", value: noCount, fill: COLORS[1] },
+                  ].map((d) => ({
+                    ...d,
+                    pct: ((d.value / total) * 100).toFixed(1),
+                  }));
+
+                  return logicData.map((d, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between rounded-lg border px-3 py-2"
+                    >
+                      <span
+                        className="w-4 h-4 rounded-[25%]"
+                        style={{ backgroundColor: d.fill }}
+                      ></span>
+                      <span className="truncate">{d.name}</span>
+                      <span className="tabular-nums">
+                        {d.value} ({d.pct}%)
+                      </span>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Render other questions normally */}
+        {otherQuestions.map((q) => {
           const renderer = RENDERERS[q.type];
           return (
             <div key={q._id}>
