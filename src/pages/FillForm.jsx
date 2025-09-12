@@ -180,8 +180,8 @@ const FillForm = () => {
             </Card>
           )}
 
-          {/* Remaining questions shown only after Yes */}
-          {showRest &&
+          {/* Remaining questions */}
+          {(!logicQuestion || showRest) &&
             restQuestions.map((q) => (
               <QuestionCard
                 key={q._id}
@@ -192,7 +192,7 @@ const FillForm = () => {
             ))}
 
           {/* Submit button only shown after Yes */}
-          {showRest && (
+          {(!logicQuestion || showRest) && (
             <Button
               type="submit"
               className="w-full text-lg py-5 bg-purple-500 hover:bg-purple-700 text-white"
