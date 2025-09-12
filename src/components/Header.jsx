@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
 
 export default function Header() {
   const { user, signOut } = useAuth();

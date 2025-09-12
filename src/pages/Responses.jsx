@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
-import axios from "@/lib/axios";
-import { Loader2 } from "lucide-react";
 import {
   FormResponses,
   SurveyAnalytics,
@@ -21,7 +19,7 @@ const ResponsesPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let isMounted = true; // avoid state updates if component unmounts
+    let isMounted = true;
 
     const fetchData = async () => {
       setLoading(true);

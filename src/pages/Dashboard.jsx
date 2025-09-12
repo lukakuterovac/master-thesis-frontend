@@ -155,7 +155,7 @@ const Dashboard = () => {
   }, [fetchForms]);
 
   const onEdit = (form) => {
-    navigate(`/edit/${form._id}`, { state: { form: form } });
+    navigate(`/edit/${form._id}`);
   };
 
   const onViewResponses = async (form) => {

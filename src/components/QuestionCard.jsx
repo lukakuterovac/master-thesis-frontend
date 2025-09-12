@@ -358,18 +358,6 @@ export const QuestionCard = ({
 
 const QuestionTypeDropdown = ({ selectedType, handleTypeChange }) => {
   const [popoverOpen, setPopoverOpen] = useState(false);
-  const timeoutRef = useRef(null);
-
-  const handleOpen = () => {
-    clearTimeout(timeoutRef.current);
-    setPopoverOpen(true);
-  };
-
-  const handleClose = () => {
-    timeoutRef.current = setTimeout(() => {
-      setPopoverOpen(false);
-    }, 150);
-  };
 
   return (
     <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
@@ -381,8 +369,7 @@ const QuestionTypeDropdown = ({ selectedType, handleTypeChange }) => {
             "group max-w-fit justify-between items-center gap-1 hover:border-purple-500 dark:hover:border-purple-500",
             popoverOpen && "border-purple-500 dark:border-purple-500"
           )}
-          onMouseEnter={handleOpen}
-          onMouseLeave={handleClose}
+          onClick={() => setPopoverOpen((prev) => !prev)} // 👈 click/tap toggles
         >
           <span
             className={cn(
@@ -400,21 +387,16 @@ const QuestionTypeDropdown = ({ selectedType, handleTypeChange }) => {
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent
-        align="start"
-        className="max-w-fit p-0"
-        onMouseEnter={handleOpen}
-        onMouseLeave={handleClose}
-      >
+      <PopoverContent align="start" className="max-w-fit p-0">
         <Command>
           <CommandList>
             <CommandGroup>
               {questionTypes.map((item) => (
                 <CommandItem
                   key={item.value}
-                  onSelect={(e) => {
+                  onSelect={() => {
                     handleTypeChange(item);
-                    e.preventDefault();
+                    setPopoverOpen(false); // 👈 closes after selection
                   }}
                   className="hover:text-purple-500 dark:hover:text-purple-500 transition-colors"
                 >

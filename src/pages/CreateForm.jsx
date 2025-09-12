@@ -977,18 +977,6 @@ const CreateForm = () => {
 // Component
 const FormTypeButton = ({ formType, setFormField }) => {
   const [open, setOpen] = useState(false);
-  const timeoutRef = useRef(null);
-
-  const handleOpen = () => {
-    clearTimeout(timeoutRef.current);
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    timeoutRef.current = setTimeout(() => {
-      setOpen(false);
-    }, 150); // small delay for smoother transition
-  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -1000,8 +988,7 @@ const FormTypeButton = ({ formType, setFormField }) => {
             "group max-w-fit justify-between items-center gap-1 hover:border-purple-500 dark:hover:border-purple-500",
             open && "border-purple-500 dark:border-purple-500"
           )}
-          onMouseEnter={handleOpen}
-          onMouseLeave={handleClose}
+          onClick={() => setOpen((prev) => !prev)}
         >
           <span
             className={cn(
@@ -1022,25 +1009,18 @@ const FormTypeButton = ({ formType, setFormField }) => {
           />
         </Button>
       </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        className="max-w-fit p-0"
-        onMouseEnter={handleOpen}
-        onMouseLeave={handleClose}
-      >
+      <PopoverContent align="start" className="max-w-fit p-0">
         <Command>
           <CommandList>
             <CommandGroup>
               {formTypes.map((item) => (
                 <CommandItem
                   key={item.value}
-                  onSelect={(e) => {
+                  onSelect={() => {
                     setFormField("type", item.value);
-                    e.preventDefault();
+                    setOpen(false);
                   }}
-                  className={
-                    "hover:text-purple-500 dark:hover:text-purple-500 transition-colors"
-                  }
+                  className="hover:text-purple-500 dark:hover:text-purple-500 transition-colors"
                 >
                   {item.label}
                   <Check

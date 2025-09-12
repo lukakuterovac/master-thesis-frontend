@@ -340,6 +340,9 @@ const RENDERERS = {
   "multi-choice": ({ q, responses }) => (
     <ChoiceQuestionCard q={q} responses={responses} />
   ),
+  "short-text": ({ q, responses }) => (
+    <TextQuestionCard q={q} responses={responses} />
+  ),
   "long-text": ({ q, responses }) => (
     <TextQuestionCard q={q} responses={responses} />
   ),

@@ -248,9 +248,9 @@ const FormResponses = ({ responses, form, quizResults }) => {
         <Card>
           <CardHeader className="flex justify-between items-center">
             <CardTitle>Response #{selectedResponseIdx + 1}</CardTitle>
-            <Button variant="ghost" className="text-red-500">
+            {/* <Button variant="ghost" className="text-red-500">
               <Trash2 /> Delete
-            </Button>
+            </Button> */}
           </CardHeader>
           <CardContent className="space-y-4">
             {responses[selectedResponseIdx].answers.map((ans, i) => (
