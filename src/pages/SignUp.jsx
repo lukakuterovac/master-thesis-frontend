@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { signUp } from "@/features/auth";
+import { signUp } from "@/api/auth";
 import { Loader2 } from "lucide-react";
 import DarkModeToggle from "@/components/DarkModeToggle";
 

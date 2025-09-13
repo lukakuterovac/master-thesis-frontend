@@ -42,7 +42,7 @@ import { cn } from "@/lib/utils";
 import Sidebar from "@/components/Sidebar";
 import { QuestionCard } from "@/components/QuestionCard";
 import { toast } from "sonner";
-import { createForm, updateForm, deleteForm } from "@/features/form";
+import { createForm, updateForm, deleteForm } from "@/api/form";
 import { Switch } from "@/components/ui/switch";
 import { capitalize, toReadableLabel } from "@/lib/helpers";
 import DatePicker from "@/components/DatePicker";
@@ -54,7 +54,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { QRCodeCanvas } from "qrcode.react";
-import { sendEmail } from "@/features/email";
+import { sendEmail } from "@/api/email";
 import LoadingScreen from "@/components/LoadingScreen";
 import { fonts, formTypes } from "@/models";
 

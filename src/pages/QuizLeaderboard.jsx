@@ -16,7 +16,7 @@ import {
   Sparkles,
   Trophy,
 } from "lucide-react";
-import { getQuizResults } from "@/features/form";
+import { getQuizResults } from "@/api/form";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import LoadingScreen from "@/components/LoadingScreen";

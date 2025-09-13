@@ -39,7 +39,7 @@ import {
 import {
   getUserForms as getForms,
   updateForm as updateFormApi,
-} from "@/features/form";
+} from "@/api/form";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { toReadableLabel } from "@/lib/helpers";

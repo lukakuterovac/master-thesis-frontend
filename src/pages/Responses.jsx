@@ -5,7 +5,7 @@ import {
   SurveyAnalytics,
 } from "@/components/ResponseComponents";
 import QuizResults from "@/components/QuizResults";
-import { getFormById, getFormResponses, getQuizResults } from "@/features/form";
+import { getFormById, getFormResponses, getQuizResults } from "@/api/form";
 import LoadingScreen from "@/components/LoadingScreen";
 
 const ResponsesPage = () => {

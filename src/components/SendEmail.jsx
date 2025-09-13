@@ -3,7 +3,7 @@ import { Mail, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { sendEmail } from "@/features/email";
+import { sendEmail } from "@/api/email";
 
 // Simple regex-based email validator
 const isValidEmail = (email) => {
