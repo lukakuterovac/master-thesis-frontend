@@ -18,14 +18,12 @@ export default function Header() {
   return (
     <header className="w-full border-b shadow-sm">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-        {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
           <img src={logo} alt="InForm Logo" className="h-12 w-12" />
           <span className="text-xl font-bold text-primary">InForm</span>
         </Link>
 
-        {/* Navigation */}
-        <nav className="flex items-center space-x-6 text-sm">
+        <nav className="hidden sm:flex items-center space-x-6 text-sm">
           <Link
             to="/explore"
             className="group flex items-center gap-2 text-gray-700 dark:text-gray-200 
@@ -51,7 +49,6 @@ export default function Header() {
           </Link>
         </nav>
 
-        {/* Right side: Dark mode + menu */}
         <div className="flex space-x-2">
           <DarkModeToggle />
           <DropdownMenu>
@@ -59,6 +56,16 @@ export default function Header() {
               <Menu className="w-6 h-6" />
             </DropdownMenuTrigger>
             <DropdownMenuContent>
+              <div className="sm:hidden">
+                <Link to="/explore">
+                  <DropdownMenuItem>Explore</DropdownMenuItem>
+                </Link>
+                <Link to="/create">
+                  <DropdownMenuItem>Create</DropdownMenuItem>
+                </Link>
+                <DropdownMenuSeparator />
+              </div>
+
               {user && (
                 <>
                   <Link to="/user-settings">

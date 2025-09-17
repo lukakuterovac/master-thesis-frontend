@@ -601,6 +601,13 @@ const SearchAndFilter = ({ onSearch, onFilterChange }) => {
           >
             Quiz
           </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem
+            checked={filters.type.includes("logic")}
+            onCheckedChange={() => toggleFilter("type", "logic")}
+            onSelect={(e) => e.preventDefault()}
+          >
+            Logic
+          </DropdownMenuCheckboxItem>
 
           <DropdownMenuSeparator />
 

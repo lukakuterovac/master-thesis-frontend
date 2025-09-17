@@ -103,7 +103,7 @@ const Explore = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-48">
             <DropdownMenuLabel>Form Type</DropdownMenuLabel>
-            {["form", "survey", "quiz"].map((type) => (
+            {["form", "survey", "quiz", "logic"].map((type) => (
               <DropdownMenuCheckboxItem
                 key={type}
                 checked={filters.type.includes(type)}

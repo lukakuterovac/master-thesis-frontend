@@ -68,7 +68,6 @@ function reorderArray(array, fromIndex, toIndex) {
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 const CreateForm = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -98,18 +97,10 @@ const CreateForm = () => {
   const shareLink = `${window.location.origin}/fill/${form.shareId}`;
 
   useEffect(() => {
-    // Case 1: form is passed in via location.state
-    if (location.state?.form) {
-      setForm(location.state.form);
-      setLoading(false);
-      return;
-    }
-
-    // Case 2: no form in state, fetch using ID if available
     if (id) {
       const fetchForm = async () => {
         try {
-          const res = await axios.get(`/forms/${id}`);
+          const res = await axios.get(`/form/form/${id}`);
           setForm(res.data);
         } catch (err) {
           console.error("Failed to fetch form:", err);
@@ -120,10 +111,9 @@ const CreateForm = () => {
 
       fetchForm();
     } else {
-      // Case 3: creating a new form
       setLoading(false);
     }
-  }, [id, location.state]);
+  }, [id]);
 
   // Handlers
   const setFormField = useCallback((field, value) => {
